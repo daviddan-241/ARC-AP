@@ -1,0 +1,32 @@
+# ArenaOS — Render Blueprint (free tier first).
+# Deploy: connect your repo at https://dashboard.render.com → New → Blueprint → pick this file.
+# Secrets (sync: false) are set once in Render's dashboard — values never live in the repo.
+
+services:
+  - type: web
+    name: arenaos
+    runtime: docker
+    plan: free            # 512MB — bump to 'starter' ($7) only if the browser transport needs it
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: OPERATOR_PASSWORD
+        sync: false       # set in Render dashboard — your platform login
+      - key: SECRET_VAULT_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_URL
+        sync: false       # optional: a Postgres URL; leave empty to use built-in SQLite
+      - key: ARENA_TRANSPORT
+        value: web         # 'web' = drive arena.ai in a logged-in browser session
+      # Arena account credentials go in the in-app vault (Settings) after first login —
+      # do NOT put them here.
+
+# Notes (free tier reality):
+# - Free web services sleep after 15 min without traffic; first request after sleep
+#   takes ~30-60s to cold-start. ArenaOS keeps all state in the DB, so nothing is lost.
+# - The headless-browser transport launches Chromium only when a chat message is sent,
+#   not at idle — that keeps sleeping/idle RAM minimal.
+# - Hosted bots: add a Render background worker or cron job service here when you
+#   create bots from the ArenaOS deploy screen; the platform generates these blocks.

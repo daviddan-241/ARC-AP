@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArenaOS</title>
+  <link rel="stylesheet" href="/assets/css/app.css">
+</head>
+<body>
+  <!-- Login -->
+  <div id="login-screen" class="login-screen hidden-fade">
+    <div class="login-card">
+      <div class="logo-mark"></div>
+      <h1>ArenaOS</h1>
+      <p class="sub">Your autonomous AI operating system</p>
+      <input id="login-password" type="password" placeholder="Operator password" autocomplete="current-password">
+      <button id="login-btn" class="btn-primary">Sign in</button>
+      <p id="login-error" class="error-text"></p>
+    </div>
+  </div>
+
+  <!-- Drawer -->
+  <nav id="drawer" class="drawer">
+    <div class="drawer-head">
+      <span class="brand">Arena<span class="brand-accent">OS</span></span>
+      <button id="drawer-close" class="icon-btn" title="Close">✕</button>
+    </div>
+    <button id="new-chat" class="drawer-item new-chat">＋ New chat</button>
+    <div class="drawer-section">Recent</div>
+    <div id="recent-chats" class="drawer-list"></div>
+    <div class="drawer-section">Library</div>
+    <div class="library-grid">
+      <a class="drawer-item" data-view="tasks">Tasks</a>
+      <a class="drawer-item" data-view="projects">Projects</a>
+      <a class="drawer-item" data-view="memory">Memory</a>
+      <a class="drawer-item" data-view="logs">Logs</a>
+      <a class="drawer-item" data-view="settings">Settings</a>
+    </div>
+  </nav>
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+  <!-- App shell -->
+  <div class="shell">
+    <header class="topbar">
+      <button id="menu-btn" class="icon-btn" title="Menu">☰</button>
+      <div class="topbar-title" id="topbar-title">ArenaOS</div>
+      <div id="status-chip" class="status-chip">●</div>
+    </header>
+
+    <!-- Chat view -->
+    <main id="view-chat" class="view chat-view">
+      <div id="greeting" class="greeting">
+        <h2 class="greet-hello">Hello, <span class="greet-name">Danny</span></h2>
+        <p class="greet-sub">What can I do for you?</p>
+      </div>
+      <div id="chat-stream" class="chat-stream"></div>
+      <div id="thoughts-panel" class="thoughts hidden-fade">
+        <button id="thoughts-toggle" class="thoughts-toggle">▸ Thoughts</button>
+        <div id="thoughts-body" class="thoughts-body"></div>
+      </div>
+      <div class="input-dock">
+        <div class="input-pill">
+          <button id="attach-btn" class="icon-btn" title="Attach (+)">＋</button>
+          <textarea id="chat-input" rows="1" placeholder="Ask anything..."></textarea>
+          <button id="mic-btn" class="icon-btn" title="Voice input">🎙</button>
+          <button id="send-btn" class="send-btn" title="Send">↑</button>
+        </div>
+        <p class="dock-hint">Arena.ai live session · uncensored · autonomous mode</p>
+      </div>
+    </main>
+
+    <!-- Secondary views -->
+    <main id="view-secondary" class="view secondary-view hidden-fade">
+      <div id="secondary-head" class="secondary-head">
+        <button id="back-chat" class="icon-btn">←</button>
+        <h3 id="secondary-title">Tasks</h3>
+      </div>
+      <div id="secondary-body" class="secondary-body"></div>
+    </main>
+  </div>
+
+  <script src="/assets/js/app.js" type="module"></script>
+</body>
+</html>
