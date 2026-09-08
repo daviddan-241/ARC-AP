@@ -20,6 +20,7 @@ from arenaos.db.database import init_db, seed
 from arenaos.engine.engine import TaskEngine
 from arenaos.executor.sandbox import ExecutionSandbox
 from arenaos.memory.autolearn import AutoLearner
+from arenaos.plugins.loader import load_plugins
 from arenaos.memory.store import MemoryStore
 from arenaos.observability.audit import Audit
 from arenaos.secrets.manager import SecretsManager
@@ -109,6 +110,10 @@ def create_app() -> FastAPI:
         degraded = settings.arena_transport == "web" and app.state.provider is None
         return JSONResponse({"status": "ok", "degraded": degraded,
                              "transport": settings.arena_transport})
+
+    # Real plugin system: every plugins/<name>/ with manifest + register() loads
+    # here; a broken plugin is recorded with status=error and skipped.
+    app.state.plugins = load_plugins({"app": app, "state": app.state})
 
     # Static UI mount goes LAST so real routes always win over the catch-all.
     static_dir = Path(__file__).parent.parent / "ui" / "static"

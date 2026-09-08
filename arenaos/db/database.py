@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
@@ -48,6 +49,21 @@ def get_sessionmaker(engine: Engine | None = None) -> sessionmaker:
             _SessionLocal = sm
         return sm
     return _SessionLocal
+
+
+@contextmanager
+def session_scope() -> Session:
+    """Context manager for direct DB work outside FastAPI request scope."""
+    sm = get_sessionmaker()
+    session = sm()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def get_session() -> Generator[Session, None, None]:

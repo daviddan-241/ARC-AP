@@ -1,0 +1,6 @@
+{
+  "name": "context-stats",
+  "version": "1.0.0",
+  "description": "Adds a /plugin/context-stats API route reporting real memory, conversation and credential counts.",
+  "permissions": []
+}
