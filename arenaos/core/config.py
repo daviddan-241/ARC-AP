@@ -44,8 +44,34 @@ class Settings(BaseSettings):
     autonomous_mode: bool = True
 
     def resolved_db_url(self) -> str:
-        """Return the effective database URL (SQLite default)."""
-        return self.db_url or f"sqlite:///{(self.data_dir / 'arenaos.db').as_posix()}"
+        """Return the effective database URL (SQLite default).
+
+        Robust against every realistic operator mistake: surrounding
+        whitespace/quotes, Render's legacy ``postgres://`` scheme, a driver we
+        don't ship (psycopg2), or an unparseable placeholder. If the value
+        can't be used we fall back to SQLite with a loud warning instead of
+        crashing the whole service at boot.
+        """
+        fallback = f"sqlite:///{(self.data_dir / 'arenaos.db').as_posix()}"
+        raw = (self.db_url or "").strip().strip('"').strip("'").strip()
+        if not raw or raw.lower() in {"changeme", "your-postgres-url", "postgres-url"}:
+            return fallback
+        # Normalize legacy schemes to the psycopg3 dialect we actually ship.
+        for prefix in ("postgres://", "postgresql://", "postgresql+psycopg2://"):
+            if raw.startswith(prefix):
+                raw = "postgresql+psycopg://" + raw[len(prefix):]
+                break
+        try:
+            from sqlalchemy.engine.url import make_url
+            make_url(raw)
+        except Exception as exc:
+            import logging
+            logging.getLogger("arenaos").warning(
+                "DB_URL is unparseable (%s...); falling back to SQLite at %s. "
+                "Set DB_URL to a full postgres://user:pass@host:5432/db URL. Error: %s",
+                raw[:24], fallback, exc)
+            return fallback
+        return raw
 
     def ensure_dirs(self) -> None:
         """Create the data, workspaces and log directories."""

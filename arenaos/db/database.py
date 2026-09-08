@@ -35,7 +35,8 @@ def get_engine(db_url: str | None = None) -> Engine:
         settings = get_settings()
         url = settings.resolved_db_url()
         connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        _engine = create_engine(url, connect_args=connect_args)
+        _engine = create_engine(url, connect_args=connect_args,
+                                pool_pre_ping=not url.startswith("sqlite"))
     return _engine
 
 
