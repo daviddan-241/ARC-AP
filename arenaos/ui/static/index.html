@@ -2,16 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <title>ArenaOS</title>
+  <meta name="theme-color" content="#05061a">
+  <meta name="description" content="ArenaOS — your autonomous AI operating system.">
+
+  <!-- Add to Home Screen (iOS): standalone app, correct icon, no browser chrome. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ArenaOS">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/icon-16.png">
+  <link rel="manifest" href="/manifest.json">
+
   <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>
   <!-- Login -->
   <div id="login-screen" class="login-screen hidden-fade">
     <div class="login-card">
-      <div class="logo-mark"></div>
-      <h1>ArenaOS</h1>
+      <img class="logo-mark" src="/assets/icons/icon-192.png" alt="ArenaOS" width="64" height="64">
+      <h1>Arena<span class="brand-accent">OS</span></h1>
       <p class="sub">Your autonomous AI operating system</p>
       <input id="login-password" type="password" placeholder="Operator password" autocomplete="current-password">
       <button id="login-btn" class="btn-primary">Sign in</button>

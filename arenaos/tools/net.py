@@ -101,3 +101,48 @@ class WebSearchTool(BaseTool):
         output = "\n\n".join(f"{r['title']}\n{r['url']}\n{r['snippet']}" for r in results)
         return ToolResult(ok=True, output=ctx.redact(output),
                           meta={"result_count": len(results)})
+
+
+class DownloadArgs(BaseModel):
+    url: str
+    path: str  # workspace-relative destination
+    max_bytes: int = Field(default=200_000_000, ge=1, le=1_000_000_000)
+
+
+class DownloadFileTool(BaseTool):
+    """Download a URL straight into the workspace jail — the agent's own 'save as'."""
+
+    name = "net.download"
+    description = "Download a file from a URL and save it inside the project workspace."
+    required_permissions = (Permission.NETWORK_REQUEST, Permission.FILESYSTEM_WRITE)
+    args_model = DownloadArgs
+
+    async def execute(self, args: DownloadArgs, ctx: ToolContext) -> ToolResult:
+        if not args.url.startswith(("http://", "https://")):
+            return ToolResult(ok=False, error="url must start with http:// or https://")
+        from pathlib import Path
+        root = Path(ctx.workspace).resolve()
+        dest = (root / args.path).resolve() if not Path(args.path).is_absolute() else Path(args.path).resolve()
+        if dest != root and not str(dest).startswith(str(root) + "/"):
+            return ToolResult(ok=False, error=f"path {args.path!r} escapes workspace jail")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            written = 0
+            async with httpx.AsyncClient(follow_redirects=True, timeout=120) as client:
+                async with client.stream("GET", args.url, headers={"User-Agent": USER_AGENT}) as response:
+                    if response.status_code >= 400:
+                        return ToolResult(ok=False, error=f"HTTP {response.status_code}")
+                    with open(dest, "wb") as f:
+                        async for chunk in response.aiter_bytes():
+                            written += len(chunk)
+                            if written > args.max_bytes:
+                                f.close()
+                                dest.unlink(missing_ok=True)
+                                return ToolResult(ok=False, error=f"exceeded max_bytes ({args.max_bytes})")
+                            f.write(chunk)
+            return ToolResult(ok=True, output=f"downloaded {written} bytes to {args.path}",
+                              meta={"bytes": written, "files_changed": [args.path]})
+        except httpx.HTTPError as exc:
+            return ToolResult(ok=False, error=f"download failed: {exc}")
+        except OSError as exc:
+            return ToolResult(ok=False, error=f"write failed: {exc}")

@@ -13,14 +13,19 @@ from arenaos.api.routers import auth as auth_router
 from arenaos.api.routers import chat as chat_router
 from arenaos.api.routers import core as core_router
 from arenaos.api.routers import tasks as tasks_router
+from arenaos.arena.base import ArenaEndpoint, ChatMessage, CompleteRequest, MOODS
+from arenaos.browser.session import PersistentBrowser
 from arenaos.core.config import get_settings
 from arenaos.core.events import EventBus
 from arenaos.core.logging import get_logger, setup_logging
 from arenaos.db.database import init_db, seed
+from arenaos.engine.agent_loop import MaxStepsExceeded, run_agent_loop
 from arenaos.engine.engine import TaskEngine
 from arenaos.executor.sandbox import ExecutionSandbox
+from arenaos.tools.base import ToolContext
 from arenaos.memory.autolearn import AutoLearner
 from arenaos.plugins.loader import load_plugins
+from arenaos.tools.registry import build_registry
 from arenaos.memory.store import MemoryStore
 from arenaos.observability.audit import Audit
 from arenaos.secrets.manager import SecretsManager
@@ -56,24 +61,40 @@ def _safe_credential(app: FastAPI, name: str) -> Optional[str]:
 
 
 def _build_engine(app: FastAPI) -> TaskEngine:
-    """Task engine whose planner/executor run goals through the live Arena provider."""
+    """Task engine whose executor runs the REAL tool-using agent loop — shell,
+    filesystem, git, browser, downloads, package installs, and lab.forge for
+    self-upgrade are all genuinely available to every task, not just a raw
+    chat completion."""
     provider = app.state.provider
 
     async def planner(task: dict, _context: dict) -> dict:
-        return {"goal": task["goal"], "approach": "direct", "steps": [
-            {"id": 1, "description": task["goal"], "action": "arena_query"}]}
+        return {"goal": task["goal"], "approach": "tool_loop"}
 
     async def executor(task: dict, plan: dict, checkpoint: dict) -> dict:
         if provider is None:
             raise RuntimeError("no model provider available (arena transport not initialized)")
-        from arenaos.arena.base import ArenaEndpoint, ChatMessage, CompleteRequest
-        request = CompleteRequest(
-            endpoint=ArenaEndpoint(name="arena-web", base_url="https://arena.ai"),
-            messages=[ChatMessage(role="user", content=task["goal"])],
-        )
-        response = await provider.complete(request)
-        return {"summary": response.content[:20000],
-                "model": response.model}
+
+        async def complete_fn(transcript: list[dict[str, str]]) -> str:
+            messages = [ChatMessage(role=m["role"], content=m["content"]) for m in transcript]
+            request = CompleteRequest(
+                endpoint=ArenaEndpoint(name="arena-web", base_url="https://arena.ai"),
+                messages=messages,
+            )
+            response = await provider.complete(request)
+            return response.content
+
+        ws = app.state.sandbox.create_workspace(task.get("project_id") or task["id"])
+        ctx = ToolContext(workspace=str(ws), project_id=task.get("project_id"),
+                          task_id=task["id"], env=app.state.secrets.inject_env())
+        try:
+            result = await run_agent_loop(
+                goal=task["goal"], registry=app.state.tools, ctx=ctx,
+                complete=complete_fn, mood_prelude=MOODS["uncensored"]["system_prelude"],
+            )
+        except MaxStepsExceeded as exc:
+            raise RuntimeError(str(exc)) from exc
+        return {"summary": result["summary"], "model": "arena-web",
+                "tool_calls": result["tool_calls"]}
 
     return TaskEngine(bus=app.state.bus, planner=planner, executor=executor)
 
@@ -89,12 +110,22 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ArenaOS", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.bus = EventBus()
     app.state.sandbox = ExecutionSandbox()
+    app.state.browser = PersistentBrowser()
     app.state.memory = MemoryStore()
     app.state.autolearn = AutoLearner(app.state.memory)
     app.state.secrets = SecretsManager()
     app.state.audit = Audit(bus=app.state.bus)
     app.state.provider = None
     app.state.engine = None
+
+    # Real tool registry — the agent's actual capabilities (shell, fs, git,
+    # browser, net, package installs, lab.forge for self-upgrade). Built BEFORE
+    # plugins load so a forged tool from a prior session can re-register on boot.
+    app.state.tools = build_registry(
+        sandbox=app.state.sandbox, browser=app.state.browser,
+        plugins_dir=Path(__file__).parent.parent.parent / "plugins",
+        forge_context={"app": app, "state": app.state},
+    )
 
     if settings.arena_transport == "web":
         app.state.provider = _build_arena_provider(app)

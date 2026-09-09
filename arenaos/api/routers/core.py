@@ -256,6 +256,41 @@ class VaultBody(BaseModel):
     value: str
 
 
+
+
+# ---------------------------------------------------------------- tools registry
+
+@router.get("/tools")
+def tools_list(request: Request, user=Depends(get_current_user)) -> list[dict]:
+    """Every real capability the agent can invoke, with its arg schema."""
+    registry = getattr(request.app.state, "tools", None)
+    if registry is None:
+        raise HTTPException(status_code=503, detail="tool registry not initialized")
+    return registry.schemas()
+
+
+@router.post("/tools/{name}/invoke")
+async def tool_invoke(name: str, request: Request, body: dict,
+                     user=Depends(get_current_user)) -> dict:
+    """Run any registered tool directly from the UI — same real code path the agent uses."""
+    registry = getattr(request.app.state, "tools", None)
+    if registry is None:
+        raise HTTPException(status_code=503, detail="tool registry not initialized")
+    from arenaos.tools.base import ToolContext
+    try:
+        tool = registry.get(name)
+        args_obj = tool.args_model(**(body.get("args", {})))
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown tool {name!r}")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"invalid args: {exc}")
+    sandbox = request.app.state.sandbox
+    ws = sandbox.create_workspace(f"invoke-{uuid.uuid4().hex[:8]}")
+    ctx = ToolContext(workspace=str(ws), env=request.app.state.secrets.inject_env())
+    result = await tool.execute(args_obj, ctx)
+    return result.to_dict()
+
+
 @router.get("/settings")
 def get_settings_rows(user=Depends(get_current_user)) -> dict:
     session: Session = get_sessionmaker()()

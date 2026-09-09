@@ -10,7 +10,12 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import asyncio
+
 from arenaos.api.deps import get_current_user
+from arenaos.arena.base import MOODS
+from arenaos.engine.agent_loop import AgentStep, MaxStepsExceeded, run_agent_loop
+from arenaos.tools.base import ToolContext
 from arenaos.core.logging import get_logger
 from arenaos.core.security import redact
 from arenaos.db.database import get_sessionmaker
@@ -114,35 +119,82 @@ async def send_message(conversation_id: str, body: MessageBody,
         from arenaos.arena.base import ArenaEndpoint, ChatMessage, CompleteRequest
         session_db: Session = _sessions()()
         try:
-            history = (session_db.query(Message)
-                       .filter(Message.conversation_id == conversation_id)
-                       .order_by(Message.created_at, Message.id)
-                       .limit(20).all())
-            messages = [ChatMessage(role=r.role, content=r.content) for r in history]
+            history_rows = (session_db.query(Message)
+                            .filter(Message.conversation_id == conversation_id)
+                            .order_by(Message.created_at, Message.id)
+                            .limit(20).all())
+            history = [{"role": r.role, "content": r.content} for r in history_rows[:-1]]
         finally:
             session_db.close()
-        request_model = CompleteRequest(
-            endpoint=ArenaEndpoint(name="arena-web", base_url="https://arena.ai"),
-            messages=messages,
-        )
+
+        async def complete_fn(transcript: list[dict[str, str]]) -> str:
+            messages = [ChatMessage(role=m["role"], content=m["content"]) for m in transcript]
+            request_model = CompleteRequest(
+                endpoint=ArenaEndpoint(name="arena-web", base_url="https://arena.ai"),
+                messages=messages,
+            )
+            response = await provider.complete(request_model)
+            return response.content
+
+        tools = getattr(request.app.state, "tools", None)
+        sandbox = getattr(request.app.state, "sandbox", None)
         full_text = ""
         model_name = "arena-web"
-        try:
-            async for event in provider.stream(request_model):
-                if event.kind == "token":
-                    full_text += event.delta
-                    yield _sse({"kind": "token", "delta": event.delta})
-                elif event.kind == "done":
-                    full_text = event.data.get("content", full_text)
-                    model_name = event.data.get("model", model_name)
-                    yield _sse({"kind": "done", "model": model_name})
-                elif event.kind == "error":
-                    yield _sse({"kind": "error", "error": event.data.get("error", "unknown")})
-                    return
-        except Exception as exc:
-            logger.warning("chat stream failed: %s", exc)
-            yield _sse({"kind": "error", "error": f"arena.ai session error: {redact(str(exc))}"})
+
+        if tools is None or sandbox is None:
+            yield _sse({"kind": "error", "error": "tool registry not initialized"})
             return
+
+        ws = sandbox.create_workspace(f"chat-{conversation_id}")
+        ctx = ToolContext(workspace=str(ws), task_id=conversation_id,
+                          env=request.app.state.secrets.inject_env())
+        queue: asyncio.Queue = asyncio.Queue()
+
+        async def on_step(step: AgentStep) -> None:
+            if step.kind == "tool_call":
+                await queue.put({"kind": "tool_call", "tool": step.tool, "args": step.args})
+            elif step.kind == "tool_result":
+                await queue.put({"kind": "tool_result", "tool": step.tool,
+                                 "ok": step.result.get("ok"),
+                                 "output": redact(str(step.result.get("output", "")))[:2000],
+                                 "error": step.result.get("error", "")})
+
+        async def produce() -> None:
+            try:
+                result = await run_agent_loop(
+                    goal=body.content, registry=tools, ctx=ctx, complete=complete_fn,
+                    mood_prelude=MOODS["uncensored"]["system_prelude"],
+                    on_step=on_step, history=history,
+                )
+                await queue.put({"kind": "__final__", "text": result["summary"]})
+            except MaxStepsExceeded as exc:
+                await queue.put({"kind": "__error__", "error": str(exc)})
+            except Exception as exc:
+                logger.warning("agent loop failed: %s", exc)
+                await queue.put({"kind": "__error__", "error": f"arena.ai session error: {redact(str(exc))}"})
+            finally:
+                await queue.put(None)
+
+        producer = asyncio.ensure_future(produce())
+        try:
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                if item["kind"] == "__final__":
+                    full_text = item["text"]
+                    yield _sse({"kind": "token", "delta": full_text})
+                    yield _sse({"kind": "done", "model": model_name})
+                elif item["kind"] == "__error__":
+                    yield _sse({"kind": "error", "error": item["error"]})
+                    await producer
+                    return
+                else:
+                    yield _sse(item)
+            await producer
+        finally:
+            if not producer.done():
+                producer.cancel()
         if full_text:
             _persist_message(conversation_id, "assistant", redact(full_text), model_name)
             try:

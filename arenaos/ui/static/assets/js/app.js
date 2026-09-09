@@ -88,14 +88,24 @@ function appendMessage(role, content, model) {
   return div;
 }
 
-async function addThought(kind, text) {
+function addThoughtStep(label, detail) {
   const body = $("#thoughts-body");
   const row = document.createElement("div");
-  row.className = "step";
-  row.innerHTML = `<span class="dot">●</span><span></span>`;
-  row.querySelector("span:last-child").textContent = `${kind}: ${text}`;
+  row.className = "step running";
+  row.innerHTML = `<span class="dot"></span><div><div class="label"></div><div class="detail"></div></div>`;
+  row.querySelector(".label").textContent = label;
+  row.querySelector(".detail").textContent = detail || "";
   body.appendChild(row);
   body.scrollTop = body.scrollHeight;
+  $("#thoughts-panel").classList.remove("hidden-fade");
+  return row;
+}
+
+function resolveThoughtStep(row, ok, detail) {
+  if (!row) return;
+  row.classList.remove("running");
+  row.classList.add(ok ? "ok" : "failed");
+  if (detail) row.querySelector(".detail").textContent = detail;
 }
 
 async function sendMessage() {
@@ -115,6 +125,7 @@ async function sendMessage() {
   reply.appendChild(cursor);
   let full = "", model = "";
   let errorShown = false;
+  let openStep = null;
   try {
     const res = await fetch(`/api/conversations/${convId}/message`, {
       method: "POST",
@@ -142,12 +153,21 @@ async function sendMessage() {
           full += event.delta;
           bodyDiv.textContent = full;
           $("#chat-stream").scrollTop = $("#chat-stream").scrollHeight;
-          await addThought("stream", "arena.ai is responding…");
+        } else if (event.kind === "tool_call") {
+          openStep = addThoughtStep(`Running ${event.tool}`, JSON.stringify(event.args || {}).slice(0, 160));
+        } else if (event.kind === "tool_result") {
+          resolveThoughtStep(openStep, event.ok, event.ok
+            ? (event.output || "done").slice(0, 200)
+            : `⚠ ${event.error || "failed"}`);
+          openStep = null;
+        } else if (event.kind === "learned") {
+          addThoughtStep(`Remembered: ${event.key}`, event.content);
         } else if (event.kind === "done") {
           model = event.model || "arena.ai";
           reply.querySelector(".model-tag").textContent = model;
         } else if (event.kind === "error") {
           errorShown = true;
+          resolveThoughtStep(openStep, false, event.error);
           const err = document.createElement("div");
           err.className = "error-inline";
           err.textContent = `⚠ ${event.error}`;
@@ -345,9 +365,29 @@ const views = {
       <div class="dim">session: ${arenaStatus}${status.arena_session_status?.detail ? " — " + status.arena_session_status.detail : ""}</div>`;
     statusCard.querySelector(".chip").textContent = arenaStatus;
     el.appendChild(statusCard);
+
+    const hasArenaLogin = vault.some(v => v.name === "arena_web_email") && vault.some(v => v.name === "arena_web_password");
+    const arenaCard = document.createElement("div");
+    arenaCard.className = "card arena-connect";
+    arenaCard.innerHTML = `<p>Connect your arena.ai account</p>
+      <div class="dim">ArenaOS drives a real logged-in arena.ai browser session with these credentials — no developer API key needed.</div>
+      <input id="arena-email" type="email" autocomplete="username" placeholder="arena.ai email"/>
+      <input id="arena-password" type="password" autocomplete="current-password" placeholder="arena.ai password"/>
+      <div class="btn-row"><button class="mini-btn primary" id="arena-connect-btn">${hasArenaLogin ? "Update login" : "Connect"}</button></div>
+      <div class="dim" style="margin-top:8px">${hasArenaLogin ? "✓ Connected — credentials stored encrypted in the vault." : "Not connected yet."}</div>`;
+    arenaCard.querySelector("#arena-connect-btn").onclick = async () => {
+      const email = arenaCard.querySelector("#arena-email").value.trim();
+      const password = arenaCard.querySelector("#arena-password").value;
+      if (!email || !password) return;
+      await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_email", kind: "email", value: email }) });
+      await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_password", kind: "password", value: password }) });
+      views.settings(el);
+    };
+    el.appendChild(arenaCard);
+
     const vaultCard = document.createElement("div");
     vaultCard.className = "card";
-    vaultCard.innerHTML = `<p>Vault credentials (values encrypted, never shown back)</p>
+    vaultCard.innerHTML = `<p>Other credentials (values encrypted, never shown back)</p>
       <input id="v-name" placeholder="name e.g. arena_web_email"/>
       <input id="v-kind" placeholder="kind e.g. password / token"/>
       <input id="v-value" type="password" placeholder="secret value"/>

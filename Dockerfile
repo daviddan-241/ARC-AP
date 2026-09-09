@@ -10,9 +10,20 @@ FROM python:3.11-slim
 ARG ARENA_BROWSER=1
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 
+# Real power-user toolset baked into the image — no root needed at runtime to use
+# any of these. apt itself still requires root by design (the app runs as the
+# non-root `arenaos` user below), so packages.install only covers pip/npm at
+# runtime; see arenaos/tools/packages.py. Categories: version control + net
+# fetch, network diagnostics, archives, media/image editing, data tools, OCR,
+# and Node/build toolchains so packages.install's npm path actually works.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    git curl wget ca-certificates openssl \
+    dnsutils whois netcat-openbsd nmap iputils-ping \
+    zip unzip jq sqlite3 \
+    ffmpeg imagemagick tesseract-ocr \
+    build-essential python3-venv \
+    nodejs npm \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /srv/arenaos
 COPY pyproject.toml README.md ./
@@ -26,7 +37,7 @@ RUN if [ "$ARENA_BROWSER" = "1" ]; then \
             libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
             libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
             libgbm1 libasound2 libpango-1.0-0 libcairo2 fonts-liberation \
-        && rm -rf /var/lib/apt/lists/* \
+        && apt-get clean && rm -rf /var/lib/apt/lists/* \
         && pip install --no-cache-dir '.[browser]' \
         && python -m playwright install chromium; \
     fi
