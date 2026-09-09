@@ -316,6 +316,13 @@ def put_setting(body: SettingBody, user=Depends(get_current_user)) -> dict:
     return {"ok": True}
 
 
+@router.get("/moods")
+def moods_list(user=Depends(get_current_user)) -> list[dict]:
+    """Real mood presets from arenaos.arena.base.MOODS — powers the top-bar mood picker."""
+    from arenaos.arena.base import MOODS
+    return [{"key": k, "temperature": v["temperature"]} for k, v in MOODS.items()]
+
+
 @router.get("/vault")
 def vault_list(request: Request, user=Depends(get_current_user)) -> list[dict]:
     return request.app.state.secrets.list()

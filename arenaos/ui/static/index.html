@@ -55,8 +55,14 @@
   <div class="shell">
     <header class="topbar">
       <button id="menu-btn" class="icon-btn" title="Menu">☰</button>
-      <div class="topbar-title" id="topbar-title">ArenaOS</div>
-      <div id="status-chip" class="status-chip">●</div>
+      <div class="mood-picker">
+        <button id="mood-btn" class="mood-btn" title="Agent mode">
+          <span id="mood-label">Uncensored</span><span class="chev">⌄</span>
+        </button>
+        <div id="mood-menu" class="mood-menu hidden-fade"></div>
+      </div>
+      <div id="status-chip" class="status-chip" title="Arena session status">●</div>
+      <button id="topbar-new-chat" class="icon-btn" title="New chat">＋</button>
     </header>
 
     <!-- Chat view -->
@@ -89,6 +95,25 @@
       </div>
       <div id="secondary-body" class="secondary-body"></div>
     </main>
+  </div>
+
+  <!-- Live arena.ai login: real Chromium page streamed here, you drive it yourself. -->
+  <div id="live-browser" class="live-browser hidden-fade">
+    <div class="lb-chrome">
+      <button id="lb-back" class="icon-btn" title="Back">‹</button>
+      <button id="lb-forward" class="icon-btn" title="Forward">›</button>
+      <button id="lb-reload" class="icon-btn" title="Reload">↻</button>
+      <div class="lb-url"><span class="lock">🔒</span><span id="lb-url-text">arena.ai</span></div>
+      <button id="lb-close" class="icon-btn" title="Close">✕</button>
+    </div>
+    <div class="lb-viewport">
+      <img id="lb-frame" alt="arena.ai live session" draggable="false">
+      <input id="lb-hidden-input" class="lb-hidden-input" autocapitalize="off" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="lb-footer">
+      <p class="dim">Log in with your real arena.ai account above — it's the real site, driven live. Handles 2FA/CAPTCHA naturally.</p>
+      <button id="lb-done" class="mini-btn primary">Done — I'm logged in</button>
+    </div>
   </div>
 
   <script src="/assets/js/app.js" type="module"></script>

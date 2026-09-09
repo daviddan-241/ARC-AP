@@ -131,7 +131,7 @@ async function sendMessage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ content: text }),
+      body: JSON.stringify({ content: text, mood: state_moods.current }),
     });
     if (!res.ok || !res.body) {
       const detail = await res.text();
@@ -374,7 +374,8 @@ const views = {
       <input id="arena-email" type="email" autocomplete="username" placeholder="arena.ai email"/>
       <input id="arena-password" type="password" autocomplete="current-password" placeholder="arena.ai password"/>
       <div class="btn-row"><button class="mini-btn primary" id="arena-connect-btn">${hasArenaLogin ? "Update login" : "Connect"}</button></div>
-      <div class="dim" style="margin-top:8px">${hasArenaLogin ? "✓ Connected — credentials stored encrypted in the vault." : "Not connected yet."}</div>`;
+      <div class="dim" style="margin-top:8px">${hasArenaLogin ? "✓ Connected — credentials stored encrypted in the vault." : "Not connected yet."}</div>
+      <div class="btn-row"><button class="mini-btn" id="arena-live-btn">Open live browser login →</button></div>`;
     arenaCard.querySelector("#arena-connect-btn").onclick = async () => {
       const email = arenaCard.querySelector("#arena-email").value.trim();
       const password = arenaCard.querySelector("#arena-password").value;
@@ -382,7 +383,9 @@ const views = {
       await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_email", kind: "email", value: email }) });
       await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_password", kind: "password", value: password }) });
       views.settings(el);
+      liveBrowserOpen();  // type it into the real site yourself — handles 2FA/CAPTCHA
     };
+    arenaCard.querySelector("#arena-live-btn").onclick = () => liveBrowserOpen();
     el.appendChild(arenaCard);
 
     const vaultCard = document.createElement("div");
@@ -484,6 +487,7 @@ document.querySelectorAll(".library-grid [data-view]").forEach((a) => {
   a.onclick = async () => { toggleDrawer(false); await openView(a.dataset.view); };
 });
 $("#back-chat").onclick = closeView;
+$("#topbar-new-chat").onclick = () => $("#new-chat").click();
 $("#send-btn").onclick = sendMessage;
 $("#mic-btn").onclick = toggleMic;
 $("#chat-input").addEventListener("input", (e) => autoGrow(e.target));
@@ -497,4 +501,127 @@ $("#thoughts-toggle").onclick = () => {
   body.style.display = open ? "none" : "block";
   $("#thoughts-toggle").textContent = (open ? "▸" : "▾") + " Thoughts";
 };
+boot();
+
+
+/* ---------------- mood picker (real /api/moods presets) ---------------- */
+const state_moods = { current: "uncensored", list: [] };
+async function loadMoods() {
+  try {
+    state_moods.list = await api("/api/moods");
+  } catch { state_moods.list = [{ key: "uncensored" }]; }
+  const menu = $("#mood-menu");
+  menu.innerHTML = "";
+  for (const m of state_moods.list) {
+    const btn = document.createElement("button");
+    btn.className = "mood-item" + (m.key === state_moods.current ? " active" : "");
+    btn.textContent = m.key.replace(/_/g, " ");
+    btn.onclick = () => {
+      state_moods.current = m.key;
+      $("#mood-label").textContent = m.key.replace(/_/g, " ");
+      menu.classList.add("hidden-fade");
+      document.querySelectorAll(".mood-item").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    };
+    menu.appendChild(btn);
+  }
+}
+$("#mood-btn").onclick = (e) => { e.stopPropagation(); $("#mood-menu").classList.toggle("hidden-fade"); };
+document.addEventListener("click", () => $("#mood-menu").classList.add("hidden-fade"));
+
+
+/* ---------------- live arena.ai login overlay ----------------
+   Real page streamed from the server's Chromium over /ws/browser/arena-login.
+   Clicks, drags, typing, scrolling and navigation are relayed back into the
+   real page — this IS the login, cookies land in the persistent profile. */
+const lb = { ws: null, dragging: false, lastPos: null };
+
+function liveBrowserOpen() {
+  $("#live-browser").classList.remove("hidden-fade");
+  const img = $("#lb-frame");
+  img.src = "";
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  lb.ws = new WebSocket(`${proto}//${location.host}/ws/browser/arena-login`);
+  lb.ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === "frame") img.src = "data:image/jpeg;base64," + msg.data;
+    else if (msg.type === "url") $("#lb-url-text").textContent = msg.url.replace(/^https:\/\//, "");
+    else if (msg.type === "error") console.warn("live browser:", msg.error);
+  };
+  lb.ws.onclose = () => { if (!$("#live-browser").classList.contains("hidden-fade")) liveBrowserClose(); };
+}
+
+function liveBrowserClose() {
+  $("#live-browser").classList.add("hidden-fade");
+  if (lb.ws) { lb.ws.close(); lb.ws = null; }
+  $("#lb-hidden-input").blur();
+}
+
+function lbSend(obj) { if (lb.ws && lb.ws.readyState === 1) lb.ws.send(JSON.stringify(obj)); }
+
+function lbCoords(e) {
+  const img = $("#lb-frame");
+  const r = img.getBoundingClientRect();
+  return {
+    x: Math.round((e.clientX - r.left) / r.width * 480),
+    y: Math.round((e.clientY - r.top) / r.height * 854),
+  };
+}
+
+(() => {
+  const img = $("#lb-frame");
+  img.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    lb.dragging = true; lb.lastPos = lbCoords(e);
+    lbSend({ type: "mousedown", ...lb.lastPos });
+    img.setPointerCapture(e.pointerId);
+  });
+  img.addEventListener("pointermove", (e) => {
+    const pos = lbCoords(e);
+    if (lb.dragging) {
+      lbSend({ type: "mousemove", ...pos });
+    } else {
+      lbSend({ type: "mousemove", ...pos });
+    }
+    lb.lastPos = pos;
+  });
+  img.addEventListener("pointerup", (e) => {
+    if (!lb.dragging) return;
+    lb.dragging = false;
+    const pos = lbCoords(e);
+    const moved = Math.abs(pos.x - lb.lastPos.x) + Math.abs(pos.y - lb.lastPos.y);
+    lbSend({ type: "mouseup", ...pos });
+    // mobile taps never send a click event to the page — if the pointer
+    // barely moved, treat pointerup as the tap itself.
+    if (e.pointerType !== "mouse") lbSend({ type: "click", ...pos });
+  });
+  img.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    lbSend({ type: "scroll", dx: Math.round(e.deltaX), dy: Math.round(e.deltaY) });
+  }, { passive: false });
+
+  // Mobile keyboards: focus a hidden input, forward every keystroke to the page.
+  const hidden = $("#lb-hidden-input");
+  img.addEventListener("click", () => hidden.focus());
+  hidden.addEventListener("beforeinput", (e) => {
+    if (e.inputType === "insertText" && e.data) lbSend({ type: "type", text: e.data });
+    else if (e.inputType === "insertLineBreak") lbSend({ type: "key", key: "Enter" });
+    else if (e.inputType === "deleteContentBackward") lbSend({ type: "key", key: "Backspace" });
+  });
+  hidden.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); lbSend({ type: "key", key: "Enter" }); }
+  });
+
+  $("#lb-back").onclick = () => lbSend({ type: "back" });
+  $("#lb-forward").onclick = () => lbSend({ type: "forward" });
+  $("#lb-reload").onclick = () => lbSend({ type: "reload" });
+  $("#lb-close").onclick = liveBrowserClose;
+  $("#lb-done").onclick = () => {
+    liveBrowserClose();
+    refreshStatus();
+    loadRecentChats();
+  };
+})();
+
 boot();

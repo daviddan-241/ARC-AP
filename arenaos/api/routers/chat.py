@@ -32,6 +32,7 @@ class ConversationBody(BaseModel):
 
 class MessageBody(BaseModel):
     content: str
+    mood: str = "uncensored"  # arena.base.MOODS key — set by the top-bar mood picker
 
 
 def _sessions():
@@ -163,7 +164,7 @@ async def send_message(conversation_id: str, body: MessageBody,
             try:
                 result = await run_agent_loop(
                     goal=body.content, registry=tools, ctx=ctx, complete=complete_fn,
-                    mood_prelude=MOODS["uncensored"]["system_prelude"],
+                    mood_prelude=MOODS.get(body.mood, MOODS["uncensored"])["system_prelude"],
                     on_step=on_step, history=history,
                 )
                 await queue.put({"kind": "__final__", "text": result["summary"]})

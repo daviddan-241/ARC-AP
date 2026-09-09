@@ -56,7 +56,10 @@ def test_web_session_config_defaults() -> None:
     assert "textarea#chat-input" in config.input_selectors
     assert "button#send" in config.send_button_selectors
     assert "div#responses > div" in config.response_selectors
-    assert config.browser_profile_dir == "data/browser_profile"
+    # default is now settings.data_dir / "browser_profile" — absolute, so
+    # the same real profile is used everywhere regardless of process CWD.
+    from arenaos.core.config import get_settings
+    assert config.browser_profile_dir == str(get_settings().data_dir / "browser_profile")
 
 
 def test_redact_credentials_helper() -> None:

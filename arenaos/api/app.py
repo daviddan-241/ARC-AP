@@ -12,6 +12,7 @@ from pathlib import Path
 from arenaos.api.routers import auth as auth_router
 from arenaos.api.routers import chat as chat_router
 from arenaos.api.routers import core as core_router
+from arenaos.api.routers import live_browser as live_browser_router
 from arenaos.api.routers import tasks as tasks_router
 from arenaos.arena.base import ArenaEndpoint, ChatMessage, CompleteRequest, MOODS
 from arenaos.browser.session import PersistentBrowser
@@ -135,6 +136,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router.router)
     app.include_router(tasks_router.router)
     app.include_router(core_router.router)
+    app.include_router(live_browser_router.router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> JSONResponse:

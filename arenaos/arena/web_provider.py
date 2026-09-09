@@ -24,6 +24,8 @@ from typing import Any, AsyncIterator, Callable, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
+from arenaos.core.config import get_settings
+
 try:
     from playwright.async_api import (
         BrowserContext,
@@ -161,7 +163,8 @@ class WebSessionConfig(BaseModel):
             "button.stop-generating",
         ]
     )
-    browser_profile_dir: str = "data/browser_profile"
+    browser_profile_dir: str = Field(
+        default_factory=lambda: str(get_settings().data_dir / "browser_profile"))
     headless: bool = True
     name: str = "arena-web"
     timeout_s: float = 120.0
@@ -206,6 +209,10 @@ class ArenaWebSession:
         self._context: Optional[BrowserContext] = None
         self._page: Optional[Page] = None
         self._lock = asyncio.Lock()
+        # Set true while a human is driving this exact page via the live-login
+        # WebSocket view (Settings > Connect arena.ai). Automated queries defer
+        # rather than fighting the user for control of the same page.
+        self.live_login_active = False
 
     async def get_page(self) -> Page:
         """Retrieve or initialize the active Playwright Page in a persistent browser context."""
@@ -354,6 +361,11 @@ class ArenaWebSession:
 
     async def send_and_wait(self, message: str, timeout_s: Optional[float] = None) -> str:
         """Type message into chat input, submit, wait for assistant response to settle, and return scraped text."""
+        if self.live_login_active:
+            raise ArenaWebLoginRequired(
+                "A manual arena.ai login session is open in Settings right now — "
+                "finish or close it there, then retry."
+            )
         page = await self.get_page()
         await self.ensure_logged_in(page)
         await self._accept_terms_if_present(page)
