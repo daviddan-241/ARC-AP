@@ -36,7 +36,7 @@ def redact(text: str) -> str:
 
 def redact_values(env: dict[str, str]) -> dict[str, str]:
     """Mask secret values in an env mapping (keys kept, values replaced)."""
-    return {k: _REDACTED for k, v in env.items() if v} if False else {k: (_REDACTED if v else v) for k, v in env.items()}
+    return {k: (_REDACTED if v else v) for k, v in env.items()}
 
 
 class VaultKeyMissing(RuntimeError):
@@ -50,15 +50,39 @@ class SecretVault:
         self._fernet = Fernet(self._resolve_key(key))
 
     @staticmethod
-    def _resolve_key(explicit: Optional[str]) -> bytes:
+    def _to_fernet_key(material: str | bytes) -> bytes:
+        """Turn ANY key material into a valid Fernet key, deterministically.
+
+        Fernet requires exactly 32 url-safe base64-encoded bytes. Env values
+        like Render's auto-generated SECRET_VAULT_KEY are arbitrary strings,
+        so we derive: valid Fernet keys pass through unchanged, anything else
+        is SHA-256-derived (same input -> same key, so secrets stay
+        decryptable across restarts; rotated key = old secrets unreadable,
+        which is the correct security behavior anyway).
+        """
+        raw = material if isinstance(material, bytes) else material.encode("utf-8")
+        raw = raw.strip()
+        try:
+            import base64
+            decoded = base64.urlsafe_b64decode(raw + b"=" * (-len(raw) % 4))
+            if len(decoded) == 32 and not [b for b in decoded if b is None]:
+                return raw
+        except Exception:
+            pass
+        import base64
+        import hashlib
+        return base64.urlsafe_b64encode(hashlib.sha256(raw).digest())
+
+    @classmethod
+    def _resolve_key(cls, explicit: Optional[str]) -> bytes:
         if explicit:
-            return explicit.encode()
+            return cls._to_fernet_key(explicit)
         settings = get_settings()
         if settings.secret_vault_key:
-            return settings.secret_vault_key.encode()
+            return cls._to_fernet_key(settings.secret_vault_key)
         key_file = settings.data_dir / ".vault_key"
         if key_file.exists():
-            return key_file.read_bytes().strip()
+            return cls._to_fernet_key(key_file.read_bytes().strip())
         settings.ensure_dirs()
         new_key = Fernet.generate_key()
         key_file.write_bytes(new_key)
