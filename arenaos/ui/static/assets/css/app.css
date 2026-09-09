@@ -354,3 +354,141 @@ pre.code {
   background: rgba(12, 15, 38, .55); backdrop-filter: blur(18px);
   border-radius: 24px;
 }
+
+/* ==================================================================
+   FULL REDESIGN — Gemini main + Grok sidebar + ChatGPT top bar
+   (overrides above; later rules win)
+   ================================================================== */
+
+/* ---------- PIN lock: modern 4-digit screen ---------- */
+.pin-screen {
+  position: fixed; inset: 0; z-index: 150; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(5, 6, 26, .92); backdrop-filter: blur(24px);
+  padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+}
+.pin-box { text-align: center; width: min(320px, 90vw); }
+.pin-logo { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 14px;
+  filter: drop-shadow(0 6px 18px rgba(139, 60, 255, .5)); }
+.pin-box h2 { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+.pin-box .dim { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+.pin-dots { display: flex; gap: 16px; justify-content: center; margin: 28px 0 34px; }
+.pin-dots .dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border); transition: all .18s var(--ease);
+}
+.pin-dots .dot.filled { background: var(--accent-grad); border-color: transparent;
+  transform: scale(1.12); box-shadow: 0 0 14px rgba(139, 108, 255, .55); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 74px); gap: 14px; justify-content: center; }
+.pin-pad button {
+  height: 74px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text);
+  font-size: 26px; font-weight: 500; cursor: pointer;
+  transition: all .12s var(--ease);
+}
+.pin-pad button:active { transform: scale(.92); background: var(--accent-soft); }
+.pin-pad .dim-key { font-size: 15px; color: var(--text-dim); }
+.pin-error { color: var(--danger); font-size: 13px; margin-top: 18px; min-height: 18px; }
+
+/* ---------- login: open, full-bleed, modern ---------- */
+.login-title { font-size: 34px; font-weight: 800; letter-spacing: -.5px;
+  background: linear-gradient(100deg, var(--text) 30%, #c9b6ff 60%, var(--accent-b));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.brand-accent { color: transparent; -webkit-text-fill-color: #b23cff; }
+.login-sub { color: var(--text-dim); margin: 8px 0 26px; font-size: 14px; }
+
+/* ---------- Grok-style long sidebar ---------- */
+.drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 90;
+  width: min(320px, 86vw); display: flex; flex-direction: column;
+  background: #080a1c; border-right: 1px solid var(--border);
+  transform: translateX(-102%); transition: transform .28s var(--ease);
+  padding: calc(var(--safe-t) + 12px) 12px 0 var(--safe-l);
+}
+.drawer.open { transform: translateX(0); box-shadow: 30px 0 80px rgba(0,0,0,.55); }
+.drawer-head { display: flex; align-items: center; gap: 10px; padding: 4px 4px 14px; }
+.drawer-head .brand { font-size: 18px; font-weight: 800; flex: 1; }
+.drawer-logo { border-radius: 8px; }
+.new-chat-btn {
+  display: block; width: 100%; padding: 13px 16px; border: none; border-radius: 14px;
+  background: var(--accent-grad); color: #fff; font-size: 15px; font-weight: 600;
+  cursor: pointer; box-shadow: 0 8px 24px rgba(139, 60, 255, .35);
+  transition: transform .15s var(--ease);
+}
+.new-chat-btn:active { transform: scale(.97); }
+.drawer-search { margin-top: 10px; }
+.drawer-search input {
+  width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+  color: var(--text); border-radius: 12px; padding: 10px 14px; outline: none;
+}
+.drawer-scroll { flex: 1; overflow-y: auto; margin-top: 8px; padding-bottom: 10px; }
+.drawer-section {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-dim); padding: 16px 8px 8px;
+}
+.drawer-list .drawer-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drawer-item {
+  display: block; padding: 11px 12px; border-radius: 12px; color: var(--text);
+  font-size: 14.5px; cursor: pointer; transition: background .13s var(--ease);
+}
+.drawer-item:hover { background: var(--surface-2); }
+.drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.drawer-foot {
+  border-top: 1px solid var(--border); padding: 12px 6px calc(var(--safe-b) + 12px);
+}
+.drawer-profile { display: flex; align-items: center; gap: 10px; }
+.drawer-profile .avatar {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 15px; color: #fff;
+  background: var(--accent-grad);
+}
+.drawer-profile .who { flex: 1; display: flex; flex-direction: column; line-height: 1.25; }
+.drawer-profile .name { font-size: 14px; font-weight: 600; }
+.drawer-profile .dim { font-size: 11px; color: var(--text-dim); }
+
+/* ---------- ChatGPT-style top bar ---------- */
+.topbar { background: rgba(5, 6, 26, .7); backdrop-filter: blur(16px); }
+
+/* ---------- Gemini main: greeting + chips ---------- */
+.greet-hello { font-size: 30px; font-weight: 800; letter-spacing: -.4px;
+  background: linear-gradient(100deg, var(--text) 20%, #c9b6ff 55%, var(--accent-b) 90%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.greet-sub { color: var(--text-dim); font-size: 16px; margin-top: 6px; }
+.chips {
+  display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px 2px;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip-suggest {
+  flex: 0 0 auto; padding: 9px 14px; border-radius: 999px; cursor: pointer;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+  font-size: 13px; transition: all .15s var(--ease);
+}
+.chip-suggest:hover { background: var(--accent-soft); border-color: var(--accent);
+  transform: translateY(-1px); }
+
+/* ---------- composer docked to the keyboard ---------- */
+#input-dock { transition: none; }
+.attach-preview {
+  display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 8px;
+}
+.attach-preview .att {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+  border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border);
+  font-size: 12.5px; max-width: 200px;
+}
+.attach-preview .att .x { color: var(--text-dim); cursor: pointer; font-weight: 700; }
+
+/* ---------- files/tools/processes list rows ---------- */
+.file-row {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px;
+  background: var(--surface);
+}
+.file-row .fname { flex: 1; font-size: 14px; word-break: break-all; }
+.file-row .fsize { color: var(--text-dim); font-size: 12px; }
+.tool-row textarea {
+  width: 100%; margin-top: 8px; background: var(--input-bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 16px; min-height: 64px;
+}

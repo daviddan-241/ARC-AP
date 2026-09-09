@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <title>ArenaOS</title>
   <meta name="theme-color" content="#05061a">
   <meta name="description" content="ArenaOS — your autonomous AI operating system.">
@@ -19,40 +19,82 @@
   <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>
-  <!-- Login -->
+
+  <!-- ============ OPERATOR LOGIN (full-bleed open screen) ============ -->
   <div id="login-screen" class="login-screen hidden-fade">
     <div class="login-card">
       <img class="logo-mark" src="/assets/icons/icon-192.png" alt="ArenaOS" width="64" height="64">
-      <h1>Arena<span class="brand-accent">OS</span></h1>
-      <p class="sub">Your autonomous AI operating system</p>
+      <h1 class="login-title">Arena<span class="brand-accent">OS</span></h1>
+      <p class="login-sub">Your autonomous AI operating system</p>
       <input id="login-password" type="password" placeholder="Operator password" autocomplete="current-password">
       <button id="login-btn" class="btn-primary">Sign in</button>
       <p id="login-error" class="error-text"></p>
     </div>
   </div>
 
-  <!-- Drawer -->
+  <!-- ============ PIN LOCK (modern 4-digit, after first login) ============ -->
+  <div id="pin-screen" class="pin-screen hidden-fade">
+    <div class="pin-box">
+      <img class="pin-logo" src="/assets/icons/icon-192.png" alt="" width="44" height="44">
+      <h2 id="pin-title">Enter your PIN</h2>
+      <p id="pin-sub" class="dim">Quick unlock for this device</p>
+      <div id="pin-dots" class="pin-dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <div id="pin-pad" class="pin-pad">
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+        <button data-k="bio" class="dim-key" id="pin-use-pass">pwd</button>
+        <button data-k="0">0</button>
+        <button data-k="del" class="dim-key">⌫</button>
+      </div>
+      <p id="pin-error" class="pin-error"></p>
+    </div>
+  </div>
+
+  <!-- ============ GROK-STYLE LONG SIDEBAR ============ -->
   <nav id="drawer" class="drawer">
     <div class="drawer-head">
+      <img src="/assets/icons/icon-192.png" alt="" width="28" height="28" class="drawer-logo">
       <span class="brand">Arena<span class="brand-accent">OS</span></span>
       <button id="drawer-close" class="icon-btn" title="Close">✕</button>
     </div>
-    <button id="new-chat" class="drawer-item new-chat">＋ New chat</button>
-    <div class="drawer-section">Recent</div>
-    <div id="recent-chats" class="drawer-list"></div>
-    <div class="drawer-section">Library</div>
-    <div class="library-grid">
-      <a class="drawer-item" data-view="tasks">Tasks</a>
-      <a class="drawer-item" data-view="projects">Projects</a>
-      <a class="drawer-item" data-view="memory">Memory</a>
-      <a class="drawer-item" data-view="logs">Logs</a>
-      <a class="drawer-item" data-view="settings">Settings</a>
+    <button id="new-chat" class="new-chat-btn">＋ &nbsp;New chat</button>
+    <div class="drawer-search">
+      <input id="chat-search" type="search" placeholder="Search chats" autocomplete="off">
+    </div>
+    <div class="drawer-scroll">
+      <div class="drawer-section">Recent</div>
+      <div id="recent-chats" class="drawer-list"></div>
+      <div class="drawer-section">Workspace</div>
+      <div class="drawer-grid">
+        <a class="drawer-item" data-view="tasks">☑ Tasks</a>
+        <a class="drawer-item" data-view="projects">▣ Projects</a>
+        <a class="drawer-item" data-view="files">🗂 Files</a>
+        <a class="drawer-item" data-view="tools">🛠 Tools</a>
+        <a class="drawer-item" data-view="processes">⚙ Processes</a>
+        <a class="drawer-item" data-view="memory">🧠 Memory</a>
+        <a class="drawer-item" data-view="logs">📋 Logs</a>
+        <a class="drawer-item" data-view="settings">⚙️ Settings</a>
+      </div>
+      <div class="drawer-section">Shortcuts</div>
+      <a class="drawer-item" id="side-live-browser">🌐 Live browser login</a>
+      <a class="drawer-item" id="side-downloads">⬇ Export memory</a>
+    </div>
+    <div class="drawer-foot">
+      <div class="drawer-profile">
+        <div class="avatar">D</div>
+        <div class="who"><span class="name">Danny</span><span class="dim">operator</span></div>
+        <span id="side-status" class="status-chip">●</span>
+      </div>
     </div>
   </nav>
   <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
-  <!-- App shell -->
+  <!-- ============ APP SHELL ============ -->
   <div class="shell">
+    <!-- ChatGPT-style top bar -->
     <header class="topbar">
       <button id="menu-btn" class="icon-btn" title="Menu">☰</button>
       <div class="mood-picker">
@@ -65,26 +107,40 @@
       <button id="topbar-new-chat" class="icon-btn" title="New chat">＋</button>
     </header>
 
-    <!-- Chat view -->
+    <!-- Gemini-style main chat view -->
     <main id="view-chat" class="view chat-view">
       <div id="greeting" class="greeting">
         <h2 class="greet-hello">Hello, <span class="greet-name">Danny</span></h2>
         <p class="greet-sub">What can I do for you?</p>
       </div>
       <div id="chat-stream" class="chat-stream"></div>
+
+      <!-- Gemini-style suggestion chips (real prompts, tap = send) -->
+      <div id="chips" class="chips">
+        <button class="chip-suggest" data-p="List every tool you have and what each does, then run one to prove it.">Show your tools</button>
+        <button class="chip-suggest" data-p="Check the system you're running on: OS, RAM, disk, network. Be honest about limits.">System report</button>
+        <button class="chip-suggest" data-p="Open a browser, go to a news site and summarize today's top stories.">Browse the web</button>
+        <button class="chip-suggest" data-p="What do you remember about me and our work? Prove memory works.">What do you remember?</button>
+      </div>
+
+      <!-- Grok-style live Thoughts -->
       <div id="thoughts-panel" class="thoughts hidden-fade">
         <button id="thoughts-toggle" class="thoughts-toggle">▸ Thoughts</button>
         <div id="thoughts-body" class="thoughts-body"></div>
       </div>
-      <div class="input-dock">
+
+      <!-- Gemini-style composer, docked to the keyboard -->
+      <div id="input-dock" class="input-dock">
+        <div id="attach-preview" class="attach-preview hidden-fade"></div>
         <div class="input-pill">
-          <button id="attach-btn" class="icon-btn" title="Attach (+)">＋</button>
+          <button id="attach-btn" class="icon-btn" title="Attach file">＋</button>
           <textarea id="chat-input" rows="1" placeholder="Ask anything..."></textarea>
           <button id="mic-btn" class="icon-btn" title="Voice input">🎙</button>
           <button id="send-btn" class="send-btn" title="Send">↑</button>
         </div>
         <p class="dock-hint">Arena.ai live session · uncensored · autonomous mode</p>
       </div>
+      <input id="attach-file" type="file" hidden>
     </main>
 
     <!-- Secondary views -->
@@ -97,7 +153,7 @@
     </main>
   </div>
 
-  <!-- Live arena.ai login: real Chromium page streamed here, you drive it yourself. -->
+  <!-- ============ LIVE ARENA.AI LOGIN (real streamed browser) ============ -->
   <div id="live-browser" class="live-browser hidden-fade">
     <div class="lb-chrome">
       <button id="lb-back" class="icon-btn" title="Back">‹</button>

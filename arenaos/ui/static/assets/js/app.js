@@ -64,7 +64,10 @@ async function loadConversation() {
   const stream = $("#chat-stream");
   stream.innerHTML = "";
   for (const m of messages) appendMessage(m.role, m.content, m.model);
-  if (messages.length) $("#greeting").style.display = "none";
+  if (messages.length) {
+    $("#greeting").style.display = "none";
+    $("#chips").style.display = "none";
+  } else { $("#chips").style.display = "flex"; }
 }
 
 function appendMessage(role, content, model) {
@@ -110,8 +113,12 @@ function resolveThoughtStep(row, ok, detail) {
 
 async function sendMessage() {
   const input = $("#chat-input");
-  const text = input.value.trim();
+  let text = input.value.trim();
   if (!text || state.thinking) return;
+  if (pendingUploads.length) {
+    text += "\n\n[attached files in workspace Uploads: " + pendingUploads.join(", ") + "]";
+    pendingUploads.length = 0; renderAttachPreview();
+  }
   input.value = ""; autoGrow(input);
   appendMessage("user", text);
   state.thinking = true;
@@ -353,6 +360,90 @@ const views = {
       el.appendChild(card);
     }
   },
+  files: async (el) => {
+    el.innerHTML = "<p class='dim'>Loading your files…</p>";
+    const pid = await uploadsProjectId();
+    let files = [];
+    try { files = await api(`/api/projects/${pid}/files?path=.`); } catch {}
+    el.innerHTML = files.length ? "" : "<p class='dim'>No files yet — tap ＋ in the chat to upload.</p>";
+    for (const f of files) {
+      if (f.dir) continue;
+      const row = document.createElement("div");
+      row.className = "file-row";
+      row.innerHTML = `<span>📄</span><span class="fname"></span><span class="fsize"></span>
+        <a class="mini-btn">Download</a>`;
+      row.querySelector(".fname").textContent = f.name;
+      row.querySelector(".fsize").textContent = f.size > 1048576 ? (f.size/1048576).toFixed(1) + " MB" : (f.size/1024).toFixed(1) + " KB";
+      const a = row.querySelector("a");
+      a.href = `/api/projects/${pid}/files/download?path=${encodeURIComponent(f.name)}`;
+      el.appendChild(row);
+    }
+  },
+  tools: async (el) => {
+    el.innerHTML = "<p class='dim'>Loading real tool registry…</p>";
+    const tools = await api("/api/tools");
+    el.innerHTML = "<p class='dim'>Every tool below is live — the same code the agent calls.</p>";
+    for (const t of tools) {
+      const card = document.createElement("div");
+      card.className = "card tool-row";
+      card.innerHTML = `<div class="row"><span></span><span class="chip"></span></div>
+        <div class="dim"></div>
+        <textarea class="args" placeholder='{"command": "whoami"}' hidden></textarea>
+        <div class="btn-row" hidden><button class="mini-btn primary run">Run</button></div>`;
+      card.querySelector("span").textContent = t.name;
+      card.querySelector(".chip").textContent = t.name;
+      card.querySelector(".dim").textContent = (t.description || "") + " " + JSON.stringify(t.args || {});
+      card.onclick = () => {
+        const ta = card.querySelector(".args"), row = card.querySelector(".btn-row");
+        ta.hidden = !ta.hidden; row.hidden = !row.hidden;
+      };
+      card.querySelector(".run").onclick = async (e) => {
+        e.stopPropagation();
+        const out = card.querySelector(".run");
+        out.textContent = "Running…"; out.disabled = true;
+        try {
+          const args = JSON.parse(card.querySelector(".args").value || "{}");
+          const res = await api(`/api/tools/${t.name}/invoke`, { method: "POST", body: JSON.stringify({ args }) });
+          const pre = document.createElement("pre");
+          pre.className = "code";
+          pre.textContent = (res.ok ? res.output : "⚠ " + (res.error || "failed")).slice(0, 3000);
+          card.appendChild(pre);
+        } catch (err) {
+          const pre = document.createElement("pre");
+          pre.className = "code"; pre.textContent = "⚠ " + err.message;
+          card.appendChild(pre);
+        }
+        out.textContent = "Run"; out.disabled = false;
+      };
+      el.appendChild(card);
+    }
+  },
+  processes: async (el) => {
+    el.innerHTML = "<p class='dim'>Loading live processes…</p>";
+    const procs = await api("/api/processes");
+    el.innerHTML = procs.length ? "" : "<p class='dim'>No background processes running.</p>";
+    for (const pr of procs) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `<div class="row"><span></span><span class="chip">running</span></div>
+        <div class="btn-row"><button class="mini-btn logs">Logs</button><button class="mini-btn stop">Stop</button></div>
+        <pre class="code" style="display:none"></pre>`;
+      card.querySelector("span").textContent = pr.cmd || pr.handle || JSON.stringify(pr).slice(0, 80);
+      card.querySelector(".logs").onclick = async () => {
+        try {
+          const r = await api(`/api/processes/${pr.id || pr.handle}/logs`);
+          const pre = card.querySelector("pre");
+          pre.style.display = "block";
+          pre.textContent = (r.logs || []).join("\n").slice(0, 3000) || "(empty)";
+        } catch (err) { alert(err.message); }
+      };
+      card.querySelector(".stop").onclick = async () => {
+        try { await api(`/api/processes/${pr.id || pr.handle}/stop`, { method: "POST" }); } catch (err) {}
+        views.processes(el);
+      };
+      el.appendChild(card);
+    }
+  },
   settings: async (el) => {
     el.innerHTML = "<p class='dim'>Loading status…</p>";
     const [status, vault] = await Promise.all([api("/api/status"), api("/api/vault")]);
@@ -373,19 +464,22 @@ const views = {
       <div class="dim">ArenaOS drives a real logged-in arena.ai browser session with these credentials — no developer API key needed.</div>
       <input id="arena-email" type="email" autocomplete="username" placeholder="arena.ai email"/>
       <input id="arena-password" type="password" autocomplete="current-password" placeholder="arena.ai password"/>
-      <div class="btn-row"><button class="mini-btn primary" id="arena-connect-btn">${hasArenaLogin ? "Update login" : "Connect"}</button></div>
-      <div class="dim" style="margin-top:8px">${hasArenaLogin ? "✓ Connected — credentials stored encrypted in the vault." : "Not connected yet."}</div>
-      <div class="btn-row"><button class="mini-btn" id="arena-live-btn">Open live browser login →</button></div>`;
+      <div class="btn-row"><button class="mini-btn primary" id="arena-connect-btn">Log in to arena.ai →</button></div>
+      <div class="dim" style="margin-top:8px">${hasArenaLogin ? "✓ Credentials stored encrypted in the vault." : "Optional: store email + password for agent auto-login; the live browser handles 2FA/CAPTCHA."}</div>`;
     arenaCard.querySelector("#arena-connect-btn").onclick = async () => {
+      // tap login -> straight into the real arena.ai page. If email/password
+      // are filled, store them in the vault first (agent auto-login); the
+      // live browser is where the actual login happens — you type it.
       const email = arenaCard.querySelector("#arena-email").value.trim();
       const password = arenaCard.querySelector("#arena-password").value;
-      if (!email || !password) return;
-      await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_email", kind: "email", value: email }) });
-      await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_password", kind: "password", value: password }) });
-      views.settings(el);
-      liveBrowserOpen();  // type it into the real site yourself — handles 2FA/CAPTCHA
+      try {
+        if (email && password) {
+          await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_email", kind: "email", value: email }) });
+          await api("/api/vault", { method: "POST", body: JSON.stringify({ name: "arena_web_password", kind: "password", value: password }) });
+        }
+      } catch {}
+      liveBrowserOpen();
     };
-    arenaCard.querySelector("#arena-live-btn").onclick = () => liveBrowserOpen();
     el.appendChild(arenaCard);
 
     const vaultCard = document.createElement("div");
@@ -459,12 +553,6 @@ async function loadRecentChats() {
   } catch {}
 }
 
-async function boot() {
-  try { await api("/api/status"); } catch { return; }  // unauthenticated → login screen stays
-  $("#login-screen").style.display = "none";
-  await Promise.all([refreshStatus(), loadRecentChats(), loadConversation()]);
-}
-
 /* ---------------- wire up ---------------- */
 $("#login-btn").onclick = tryLogin;
 $("#login-password").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
@@ -483,11 +571,25 @@ $("#new-chat").onclick = async () => {
   $("#greeting").style.display = "block";
   toggleDrawer(false); closeView();
 };
-document.querySelectorAll(".library-grid [data-view]").forEach((a) => {
+document.querySelectorAll(".drawer-grid [data-view]").forEach((a) => {
   a.onclick = async () => { toggleDrawer(false); await openView(a.dataset.view); };
 });
 $("#back-chat").onclick = closeView;
 $("#topbar-new-chat").onclick = () => $("#new-chat").click();
+$("#side-live-browser").onclick = () => { toggleDrawer(false); liveBrowserOpen(); };
+$("#side-downloads").onclick = async () => {
+  const data = await api("/api/memory/export");
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "arenaos-memory.json"; a.click();
+  toggleDrawer(false);
+};
+$("#chat-search").addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll("#recent-chats .drawer-item").forEach((a) => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+});
 $("#send-btn").onclick = sendMessage;
 $("#mic-btn").onclick = toggleMic;
 $("#chat-input").addEventListener("input", (e) => autoGrow(e.target));
@@ -501,7 +603,6 @@ $("#thoughts-toggle").onclick = () => {
   body.style.display = open ? "none" : "block";
   $("#thoughts-toggle").textContent = (open ? "▸" : "▾") + " Thoughts";
 };
-boot();
 
 
 /* ---------------- mood picker (real /api/moods presets) ---------------- */
@@ -624,4 +725,133 @@ function lbCoords(e) {
   };
 })();
 
+
+/* ---------------- PIN lock (real, stored server-side via /api/settings) ---------------- */
+const pin = { mode: "locked", entry: "", pendingHash: "" };
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function pinShow(mode, subtitle) {
+  pin.mode = mode; pin.entry = "";
+  $("#pin-title").textContent = mode === "create" ? "Create your PIN" : (mode === "confirm" ? "Confirm your PIN" : "Enter your PIN");
+  $("#pin-sub").textContent = subtitle || "";
+  $("#pin-error").textContent = "";
+  pinRender();
+  $("#pin-screen").classList.remove("hidden-fade");
+}
+
+function pinRender() {
+  document.querySelectorAll("#pin-dots .dot").forEach((d, i) =>
+    d.classList.toggle("filled", i < pin.entry.length));
+}
+
+async function pinDigit(k) {
+  if (k === "del") { pin.entry = pin.entry.slice(0, -1); pinRender(); return; }
+  if (k === "bio") { $("#pin-screen").classList.add("hidden-fade"); showLogin(); return; }
+  if (pin.entry.length >= 4) return;
+  pin.entry += k; pinRender();
+  if (pin.entry.length < 4) return;
+  $("#pin-error").textContent = "";
+  if (pin.mode === "create") {
+    pin.pendingHash = await sha256Hex(pin.entry);
+    pinShow("confirm", "One more time so you don't get locked out");
+  } else if (pin.mode === "confirm") {
+    if ((await sha256Hex(pin.entry)) !== pin.pendingHash) {
+      pinShow("create", "PINs didn't match — start over"); return;
+    }
+    await api("/api/settings", { method: "PUT", body: JSON.stringify({ key: "pin_hash", value: pin.pendingHash }) });
+    $("#pin-screen").classList.add("hidden-fade");
+  } else {
+    const stored = (await api("/api/settings")).pin_hash;
+    if (stored && (await sha256Hex(pin.entry)) === stored) {
+      $("#pin-screen").classList.add("hidden-fade");
+    } else {
+      pin.entry = ""; pinRender();
+      $("#pin-error").textContent = "Wrong PIN — try again";
+    }
+  }
+}
+
+document.querySelectorAll("#pin-pad button").forEach((b) => {
+  b.onclick = () => pinDigit(b.dataset.k);
+});
+
+/* ---------------- real uploads (attach button) ---------------- */
+async function uploadsProjectId() {
+  let pid = localStorage.getItem("uploads_project_id");
+  if (pid) { try { await api(`/api/projects/${pid}/files?path=.`); return pid; } catch { localStorage.removeItem("uploads_project_id"); } }
+  const proj = await api("/api/projects", { method: "POST", body: JSON.stringify({ name: "Uploads", description: "Files attached from chat" }) });
+  localStorage.setItem("uploads_project_id", proj.id);
+  return proj.id;
+}
+
+const pendingUploads = [];
+
+function renderAttachPreview() {
+  const box = $("#attach-preview");
+  box.innerHTML = "";
+  box.classList.toggle("hidden-fade", pendingUploads.length === 0);
+  pendingUploads.forEach((f, i) => {
+    const chip = document.createElement("span");
+    chip.className = "att";
+    const nm = document.createElement("span");
+    nm.textContent = "📎 " + f;
+    const x = document.createElement("span");
+    x.className = "x"; x.textContent = "✕";
+    x.onclick = () => { pendingUploads.splice(i, 1); renderAttachPreview(); };
+    chip.appendChild(nm); chip.appendChild(x);
+    box.appendChild(chip);
+  });
+}
+
+$("#attach-btn").onclick = () => $("#attach-file").click();
+$("#attach-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const pid = await uploadsProjectId();
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("path", file.name);
+    const res = await fetch(`/api/projects/${pid}/files/upload`, { method: "POST", body: fd, credentials: "include" });
+    if (!res.ok) throw new Error("upload failed");
+    pendingUploads.push(file.name);
+    renderAttachPreview();
+  } catch (err) { alert("Upload failed: " + err.message); }
+});
+
+/* chips tap = send a real prompt */
+document.querySelectorAll(".chip-suggest").forEach((c) => {
+  c.onclick = () => { $("#chat-input").value = c.dataset.p; sendMessage(); };
+});
+
+/* keyboard stays glued to the message bar (iOS Safari + Android) */
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  vv.addEventListener("resize", () => {
+    const dock = $("#input-dock");
+    const gap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    dock.style.paddingBottom = gap > 0 ? gap + "px" : "";
+    const stream = $("#chat-stream");
+    if (gap > 0) stream.scrollTop = stream.scrollHeight;
+  });
+}
+
+/* ---------------- boot with PIN gate ---------------- */
+async function boot() {
+  try { await api("/api/status"); } catch { return; }  // unauthenticated -> login screen stays
+  $("#login-screen").style.display = "none";
+  let stored = {};
+  try { stored = await api("/api/settings"); } catch { return; }
+  if (!stored.pin_hash) {
+    pinShow("create", "Pick a 4-digit PIN to unlock ArenaOS fast on this device");
+  } else {
+    pinShow("locked", "Quick unlock for this device");
+  }
+  await Promise.all([refreshStatus(), loadRecentChats(), loadConversation()]);
+}
 boot();
