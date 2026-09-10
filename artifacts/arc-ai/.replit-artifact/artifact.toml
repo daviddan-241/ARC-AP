@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ARC AI"
+description = "A polished AI workspace inspired by ARC's autonomous operator platform, bringing chat, thoughts, skills, automations, library, private chat, and a browser workspace into one responsive experience."
+version = "1.0.0"
+id = "artifacts/arc-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24651
+
+[services.development]
+run = "pnpm --filter @workspace/arc-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/arc-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/arc-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24651"
+BASE_PATH = "/"

@@ -1,0 +1,131 @@
+You are an expert frontend engineer and UI/UX designer. Your task is to build a complete, production-ready, mobile-first AI chat application frontend that is an exact visual and functional clone of the Grok / ChatGPT / Gemini interfaces shown in the previous conversation screenshots and the 5 generated mockup images.
+
+### PRIMARY GOAL
+Create a flawless, high-fidelity recreation of the provided UI screens with zero visual deviation. Every spacing, radius, shadow, color, font weight, icon style, and interaction must match the reference images exactly. The app must feel native and premium.
+
+### DESIGN SYSTEM (STRICT)
+
+Colors:
+- Background: pure white (#FFFFFF)
+- Secondary background / cards: #F8F9FA or #F5F5F7
+- Primary text: #1A1A1A
+- Secondary text: #6B7280
+- Accent blue (buttons, links): #007AFF or #2563EB
+- Border: #E5E7EB
+- Success green for checkmarks: #22C55E
+- Soft shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)
+
+Typography:
+- Font family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif
+- Headers: 17–20px, font-weight 600–700
+- Body: 15–16px, font-weight 400
+- Secondary / meta text: 13px, font-weight 400, color #6B7280
+
+Spacing & Radius:
+- Card border-radius: 16px–20px
+- Button border-radius: 12px–9999px (pill)
+- Consistent 16px horizontal padding
+- 12px vertical gaps between cards
+- Status bar height accounted for (safe area)
+
+Icons: Use Lucide React or Heroicons. Style must be thin, modern, matching the reference screenshots (robot head, clock, pin, Discord, etc.).
+
+### REQUIRED SCREENS (build all of them)
+
+1. **Main Chat / Thoughts Screen** (most important)
+   - Top: iOS-style status bar + back arrow + “Thoughts” title + more menu
+   - Expandable section titled “Exploring TextPlus free number options” with chevron
+   - Inside: “Searching across the web…” loading state
+   - “SEARCH RESULTS” section with cards:
+     - Logo circle + domain + time ago
+     - Title (bold)
+     - Short description
+     - Bookmark icon on the right
+   - “EXPLORATION PROGRESS” section with green checkmarks and one open circle
+   - Bottom fixed input bar: “Ask Anything” + Fast mode toggle + send button (↑)
+   - Exact match to the first generated image and original Grok Thoughts screenshots
+
+2. **Skills Screen**
+   - Header “Skills”
+   - “My Skills” empty state with cute robot icon, text “No custom skills yet”, and large blue “Create with Grok” button
+   - “Built-in” list with icons + titles + short descriptions + chevrons:
+     - Word Documents
+     - PDFs
+     - Presentations
+     - Skill Creator
+     - Spreadsheets
+   - Exact match to the second generated image
+
+3. **Automations / Settings Hub**
+   - Header “Automations”
+   - Empty state with large clock icon + “Start by adding an automation” + dark “+ New Automation” button
+   - List below: Automations, Companions, Pinned chats, Discord servers, OPEN CLAW (with icons)
+   - Exact match to the third generated image
+
+4. **Library Screen**
+   - Header “Library”
+   - Documents section with empty state (“No documents yet”)
+   - Media section with 2×3 grid of empty camera placeholders
+   - Exact match to the fourth generated image
+
+5. **Private Chat Screen**
+   - Centered hat + sunglasses icon
+   - Title “Private Chat”
+   - Subtitle “This chat won’t appear in history and will be fully erased”
+   - Dark input bar with “Ask Anything”, Fast toggle, mic, send
+   - Soft gradient background
+   - Exact match to the fifth generated image
+
+6. **Side Menu / Profile** (from original screenshots)
+   - User avatar + name
+   - “Try SuperGrok” banner
+   - Automations, Companions
+   - Pinned section
+   - Recent conversations list
+
+7. **In-App Browser** (critical feature)
+   - Full-screen webview / iframe that can load ANY URL
+   - Address bar, back/forward, refresh, close
+   - User must be able to log into any website (Google, Discord, banking, etc.)
+   - Smooth transition from chat → browser and back
+
+### FUNCTIONAL REQUIREMENTS
+
+- Chat is **manual only**: user types message → presses send. No auto-send.
+- Suggestion chips only (quick replies appear as pills under the last message).
+- Expandable “Thoughts” panels with smooth Framer Motion height animation.
+- Source cards are clickable and open the in-app browser.
+- Fast mode toggle works (visual only is fine for now).
+- All screens are navigable via bottom tab bar or side drawer.
+- Fully responsive (mobile first, looks good on desktop as a phone frame).
+- Dark mode ready (but default is light mode matching the screenshots).
+
+### TECH STACK (recommended – follow exactly unless better)
+
+- React 18 + TypeScript
+- Tailwind CSS (with custom design tokens matching the colors above)
+- Framer Motion for all expansions and page transitions
+- Lucide React for icons
+- React Router for navigation
+- Zustand or Context for chat + thoughts state
+- A simple WebView component (or iframe with sandbox) for the open browser
+
+### IMPLEMENTATION RULES (NO ERRORS)
+
+- Pixel-perfect spacing and alignment to the reference images.
+- Every card, button, and text must look identical to the generated mockups.
+- Use the exact same hierarchy, wording, and icon placement.
+- No placeholder lorem ipsum — use the real text from the screenshots (“Exploring TextPlus free number options”, “No custom skills yet”, etc.).
+- Componentize everything: <ThoughtsPanel />, <SourceCard />, <SkillItem />, <EmptyState />, <ChatInput />, <InAppBrowser />.
+- Make the code clean, typed, and production-ready.
+- Include a beautiful phone frame mockup for desktop preview if possible.
+
+### FINAL DELIVERABLE
+
+1. Full working React project (or Next.js if preferred).
+2. All 7 screens fully implemented and navigable.
+3. The open browser feature working so the user can log into any site.
+4. Exact visual match to the previous 5 images + original screenshots.
+5. README with setup instructions.
+
+Start by creating the design system tokens, then build the Main Chat / Thoughts screen first (most complex), then the rest. Do not skip any visual detail. Match the references perfectly.
