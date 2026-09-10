@@ -51,8 +51,8 @@ interface AppState {
   // in-app browser
   browserOpen: boolean;
   browserUrl: string;
-  browserPage: "arena" | "webmail";
-  openBrowser: (url: string, page?: "arena" | "webmail") => void;
+  browserPage: "arena" | "webmail" | "free";
+  openBrowser: (url: string, page?: "arena" | "webmail" | "free") => void;
   closeBrowser: () => void;
 }
 

@@ -70,7 +70,10 @@ def test_apply_input_nav_controls_hit_real_page_methods():
     page.go_back.assert_awaited_once()
     page.go_forward.assert_awaited_once()
     page.reload.assert_awaited_once()
-    page.goto.assert_awaited_once_with("https://arena.ai/login", wait_until="domcontentloaded")
+    # "commit" (not "domcontentloaded"): navigation returns the instant the
+    # server commits, so the screencast streams the loading frames too —
+    # the operator sees the page paint from the very start.
+    page.goto.assert_awaited_once_with("https://arena.ai/login", wait_until="commit")
 
 
 def test_apply_input_never_raises_on_a_bad_message():
@@ -106,8 +109,54 @@ def test_ws_route_rejects_when_arena_provider_unavailable():
     client = TestClient(app)
     login = client.post("/api/auth/login", json={"password": os.environ.get("OPERATOR_PASSWORD", "admin")})
     assert login.status_code == 200
-    # TEST_MODE never builds a real provider, so this must fail closed, not
-    # silently pretend a login session started.
-    with pytest.raises(Exception):
-        with client.websocket_connect("/ws/browser/arena-login"):
-            pass
+    # TEST_MODE never builds a real provider, so the route must fail closed,
+    # not silently pretend a login session started. The operator still gets an
+    # honest in-UI error message instead of a dead overlay, then a 4503 close.
+    from starlette.websockets import WebSocketDisconnect
+    with client.websocket_connect("/ws/browser/arena-login") as ws:
+        msg = ws.receive_json()
+        assert msg["type"] == "error", msg
+        assert "browser" in msg["error"].lower(), msg
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_ws_free_session_opens_any_site_on_the_persistent_browser():
+    """page=free: the operator's persistent general-purpose browser serves ANY
+    url (google, discord, banking) — not the arena page. Logins land in the
+    profile dir and persist across restarts."""
+    import os
+    os.environ["ARENAOS_TEST"] = "1"
+    from arenaos.api.app import app
+
+    page = _fake_page()
+    page.url = "about:blank"
+    page.set_viewport_size = AsyncMock()
+    page.context = MagicMock()
+    cdp = MagicMock()
+    cdp.send = AsyncMock()
+    page.context.new_cdp_session = AsyncMock(return_value=cdp)
+
+    browser = MagicMock()
+    browser.get_page = AsyncMock(return_value=page)
+
+    original = app.state.browser
+    app.state.browser = browser
+    try:
+        client = TestClient(app)
+        login = client.post("/api/auth/login", json={"password": os.environ.get("OPERATOR_PASSWORD", "admin")})
+        assert login.status_code == 200
+        with client.websocket_connect(
+                "/ws/browser/arena-login?page=free&url=https%3A%2F%2Fwww.google.com") as ws:
+            # the persistent browser's operator tab serves the request
+            browser.get_page.assert_awaited_once_with("operator")
+            # it actually navigates to the requested site (this was the bug:
+            # any URL used to silently show the arena page instead)
+            page.goto.assert_awaited_once_with("https://www.google.com", wait_until="commit")
+            msg = ws.receive_json()
+            assert msg["type"] == "url", msg
+            # taps relay into the real page
+            ws.send_json({"type": "click", "x": 21, "y": 42})
+            page.mouse.click.assert_awaited_once_with(21, 42)
+    finally:
+        app.state.browser = original

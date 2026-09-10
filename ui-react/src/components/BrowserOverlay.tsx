@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Globe, Lock, Mail, Maximize2, Minimize2, RotateCw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, Globe, Lock, Mail, Maximize2, Minimize2, RotateCw, X } from "lucide-react";
 import { useStore } from "../lib/store";
 
 type WSMsg =
@@ -93,7 +93,11 @@ export default function BrowserOverlay() {
   const gotoTyped = () => {
     const v = addr.trim();
     if (!v) return;
-    send({ type: "goto", url: /^https?:\/\//.test(v) ? v : `https://${v}` });
+    const url = /^https?:\/\//.test(v) ? v : `https://${v}`;
+    // Never steer the arena/mail session pages away by typing â typed URLs
+    // open the free persistent browsing session instead.
+    if (page === "free") send({ type: "goto", url });
+    else openBrowser(url, "free");
   };
 
   return (
@@ -117,7 +121,7 @@ export default function BrowserOverlay() {
 
       {/* live tab selector: the arena page or the agent's own mail — both are real server tabs */}
       <div className="flex items-center gap-1 border-b border-white/[.07] bg-[#0a0d2b]/60 px-3 py-1.5">
-        {([["arena", "Arena", Globe, "https://arena.ai"], ["webmail", "Mail", Mail, "https://mail.google.com"]] as const).map(([id, label, Icon, url]) => (
+        {([["arena", "Arena", Globe, "https://arena.ai"], ["webmail", "Mail", Mail, "https://mail.google.com"], ["free", "Web", Compass, "https://www.google.com"]] as const).map(([id, label, Icon, url]) => (
           <button key={id} onClick={() => openBrowser(url, id)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${page === id ? "bg-white/[.1] text-white" : "text-slate-500 hover:text-white"}`}>
             <Icon size={13} />{label}

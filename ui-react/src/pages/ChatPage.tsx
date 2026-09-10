@@ -38,6 +38,7 @@ export default function ChatPage() {
   const [attaching, setAttaching] = useState(false);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const streamRef = useRef(false);
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -157,9 +158,9 @@ export default function ChatPage() {
           )}
           <div className="pb-3 pt-3">
             {!showEmpty && quickReplies.length > 0 && !thinking && (
-              <div className="flex flex-wrap gap-2">
+              <div className="arc-no-scrollbar flex items-center gap-2 overflow-x-auto">
                 {quickReplies.map((c) => (
-                  <button key={c} onClick={() => send(c)} className="rounded-full border border-cyan-300/20 bg-cyan-300/[.06] px-3.5 py-1.5 text-[12.5px] font-medium text-cyan-200 active:scale-95">{c}</button>
+                  <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="shrink-0 whitespace-nowrap rounded-full border border-cyan-300/20 bg-cyan-300/[.06] px-3.5 py-1.5 text-[12.5px] font-medium text-cyan-200 active:scale-95">{c}</button>
                 ))}
               </div>
             )}
@@ -169,9 +170,9 @@ export default function ChatPage() {
       </div>
 
       {showEmpty && !thinking && (
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap justify-center gap-2 px-4 pb-3 sm:px-8">
+        <div className="arc-no-scrollbar mx-auto flex w-full max-w-3xl items-center gap-2 overflow-x-auto px-4 pb-3 sm:px-8">
           {CHIPS.map((c) => (
-            <button key={c} onClick={() => send(c)} className="arc-card rounded-full px-3.5 py-2 text-[12.5px] font-medium text-slate-300 hover:text-white active:scale-95">{c.length > 46 ? c.slice(0, 46) + "…" : c}</button>
+            <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="arc-card shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[12.5px] font-medium text-slate-300 hover:text-white active:scale-95">{c.length > 44 ? c.slice(0, 44) + "…" : c}</button>
           ))}
         </div>
       )}
@@ -179,7 +180,7 @@ export default function ChatPage() {
       {/* the real composer — Fast/Deep maps to real backend moods */}
       <div className="mx-auto w-full max-w-3xl px-4 pb-4 sm:px-8">
         <div className="arc-composer rounded-2xl border border-white/[.11] bg-[#111531] p-2 shadow-2xl">
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={1}
+          <textarea ref={textRef} value={text} onChange={(e) => setText(e.target.value)} rows={1}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const v = text; setText(""); send(v); } }}
             placeholder="Ask anything. Make it real."
             className="arc-focus max-h-28 min-h-12 w-full resize-none bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600" />

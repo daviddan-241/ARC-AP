@@ -9,7 +9,7 @@ export default function BrowserPage() {
   const openBrowser = useStore((s) => s.openBrowser);
   const [url, setUrl] = useState("");
 
-  const go = (target: string, page: "arena" | "webmail" = "arena") => openBrowser(target, page);
+  const go = (target: string, page: "arena" | "webmail" | "free" = "free") => openBrowser(target, page);
 
   return (
     <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
@@ -30,9 +30,9 @@ export default function BrowserPage() {
         <p className="arc-mono mb-3 text-[10px] uppercase tracking-[.22em] text-cyan-300/70">Open any site</p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="discord.com, your bank, anything…"
-            onKeyDown={(e) => { if (e.key === "Enter" && url.trim()) go(/^https?:\/\//.test(url.trim()) ? url.trim() : `https://${url.trim()}`); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && url.trim()) go(/^https?:\/\//.test(url.trim()) ? url.trim() : `https://${url.trim()}`, "free"); }}
             className="arc-focus flex-1 rounded-xl border border-white/[.09] bg-white/[.035] px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
-          <button onClick={() => url.trim() && go(/^https?:\/\//.test(url.trim()) ? url.trim() : `https://${url.trim()}`)}
+          <button onClick={() => url.trim() && go(/^https?:\/\//.test(url.trim()) ? url.trim() : `https://${url.trim()}`, "free")}
             className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cyan-300 to-violet-500 px-5 py-2.5 text-xs font-bold text-[#10132f] active:scale-[.98]">
             <Zap size={14} />Launch
           </button>

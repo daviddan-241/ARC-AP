@@ -56,7 +56,7 @@ export default function PluginsPage() {
     {
       id: "browser", name: "Any website", connected: true,
       detail: "The full live browser — log into Discord, banking, anything. Cookies persist server-side.",
-      act: () => openBrowser("https://www.google.com", "arena"),
+      act: () => openBrowser("https://www.google.com", "free"),
     },
   ];
 
