@@ -18,6 +18,7 @@ from arenaos.engine.agent_loop import AgentStep, MaxStepsExceeded, run_agent_loo
 from arenaos.tools.base import ToolContext
 from arenaos.core.logging import get_logger
 from arenaos.core.security import redact
+from arenaos.browser.errors import friendly_browser_error
 from arenaos.db.database import get_sessionmaker
 from arenaos.db.models import Conversation, Message
 
@@ -190,7 +191,10 @@ async def send_message(conversation_id: str, body: MessageBody,
                 await queue.put({"kind": "__error__", "error": str(exc)})
             except Exception as exc:
                 logger.warning("agent loop failed: %s", exc)
-                await queue.put({"kind": "__error__", "error": f"arena.ai session error: {redact(str(exc))}"})
+                # Show one clean, honest sentence — never Playwright's raw
+                # multi-line ASCII-art error box dumped straight into chat.
+                await queue.put({"kind": "__error__",
+                                 "error": f"arena.ai session error: {redact(friendly_browser_error(exc))}"})
             finally:
                 await queue.put(None)
 

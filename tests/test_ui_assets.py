@@ -41,10 +41,14 @@ def test_spa_serves_and_deep_links(client: TestClient) -> None:
 
 def test_design_tokens_present(client: TestClient) -> None:
     css = _app_css()
-    # ARC design tokens (dark navy + magenta->violet->cyan, sampled from the
-    # ARC wordmark image Danny provided)
-    for token in ("#9b4dff", "#d946c8", "#4ec1ff", "#0a0d24", "#12152e", "#22c55e"):
+    # ARC design tokens — the Replit arc-ai operator-layer design: deep navy
+    # surfaces (#080b25 sidebar, #111531 composer, #020313 backdrop) and the
+    # cyan -> violet -> magenta gradient off the ARC wordmark.
+    for token in ("#080b25", "#111531", "#020313", "#45cef7", "#ab50f2", "#eb52ab"):
         assert token in css.lower(), f"missing design token {token}"
+    # the arc-* design-system classes must survive the build
+    for cls in (".arc-card", ".arc-gradient", ".arc-mono", ".arc-composer", ".arc-shell"):
+        assert cls in css, f"missing design-system class {cls}"
 
 
 def test_ios_zoom_rule_inputs_are_16px() -> None:

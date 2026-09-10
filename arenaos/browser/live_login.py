@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket, WebSocketDisconnect
 
 from arenaos.core.logging import get_logger
+from arenaos.browser.errors import friendly_browser_error
 
 if TYPE_CHECKING:
     from arenaos.arena.web_provider import ArenaWebSession
@@ -70,9 +71,11 @@ async def run_live_login(websocket: WebSocket, session: "ArenaWebSession",
     except WebSocketDisconnect:
         pass
     except Exception as exc:
+        # Full detail stays in the server log; the user only ever sees one
+        # clean, honest sentence — never Playwright's raw ASCII-art error box.
         logger.warning("live arena login session error: %s", exc)
         try:
-            await websocket.send_json({"type": "error", "error": str(exc)})
+            await websocket.send_json({"type": "error", "error": friendly_browser_error(exc)})
         except Exception:
             pass
     finally:

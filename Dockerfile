@@ -33,6 +33,16 @@ COPY plugins ./plugins
 COPY tests ./tests
 RUN pip install --no-cache-dir '.[postgres]'
 
+# REAL BUG THIS FIXES: playwright install used to run here as root (the
+# default user at this point in the build), which writes browsers to
+# /root/.cache/ms-playwright. The app runs at RUNTIME as the non-root
+# `arenaos` user (HOME=/home/arenaos), so Playwright looked in
+# /home/arenaos/.cache/ms-playwright and found nothing — every browser
+# launch crashed with "Executable doesn't exist at
+# /home/arenaos/.cache/ms-playwright/...". Fix: pin PLAYWRIGHT_BROWSERS_PATH
+# to one fixed, user-independent directory that's both installed into at
+# build time and read from at runtime — no dependency on whose $HOME it is.
+ENV PLAYWRIGHT_BROWSERS_PATH=/srv/arenaos/pw-browsers
 RUN if [ "$ARENA_BROWSER" = "1" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
             libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
@@ -40,11 +50,14 @@ RUN if [ "$ARENA_BROWSER" = "1" ]; then \
             libgbm1 libasound2 libpango-1.0-0 libcairo2 fonts-liberation \
         && apt-get clean && rm -rf /var/lib/apt/lists/* \
         && pip install --no-cache-dir '.[browser]' \
-        && python -m playwright install chromium; \
+        && (python -m playwright install --with-deps chromium || python -m playwright install chromium); \
     fi
 
-# Non-root user; the browser profile dir must be writable.
-RUN useradd -m arenaos && mkdir -p /srv/arenaos/data && chown -R arenaos:arenaos /srv/arenaos
+# Non-root user; the browser profile dir AND the pinned playwright browsers
+# dir must both be writable/readable by arenaos (see PLAYWRIGHT_BROWSERS_PATH
+# above — this chown is what actually makes the fix work end to end).
+RUN useradd -m arenaos && mkdir -p /srv/arenaos/data && \
+    chown -R arenaos:arenaos /srv/arenaos
 USER arenaos
 
 ENV DATA_DIR=/srv/arenaos/data

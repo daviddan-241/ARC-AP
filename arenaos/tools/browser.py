@@ -12,6 +12,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from arenaos.browser.session import BrowserUnavailable, PersistentBrowser
+from arenaos.browser.errors import friendly_browser_error
 from arenaos.core.permissions import Permission
 from arenaos.tools.base import BaseTool, ToolContext, ToolResult
 
@@ -102,4 +103,6 @@ class BrowserTool(BaseTool):
 
             return ToolResult(ok=False, error=f"unknown action {args.action!r}")
         except Exception as exc:  # real Playwright/timeout errors — never faked
-            return ToolResult(ok=False, error=f"browser action failed: {type(exc).__name__}: {exc}")
+            # One honest, human-readable line — never a raw multi-line
+            # Playwright traceback / ASCII-art box shown to the agent or user.
+            return ToolResult(ok=False, error=f"browser action failed: {friendly_browser_error(exc)}")
