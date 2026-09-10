@@ -44,7 +44,7 @@ export default function Skills() {
         <p className="text-[15px] text-ink-dim">No custom skills yet</p>
         <button onClick={() => navigate("/chat")}
           className="bg-accent text-white rounded-full px-6 py-3 font-semibold shadow-soft active:scale-95 transition-transform">
-          Create with Grok
+          Create with Arena
         </button>
       </div>
 

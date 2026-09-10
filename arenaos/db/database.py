@@ -26,17 +26,26 @@ def hash_password(password: str) -> str:
 def get_engine(db_url: str | None = None) -> Engine:
     """Return or create the global SQLAlchemy Engine instance."""
     global _engine
+    # Never let a dead/slow DB hang the UI for minutes: 5s connect timeout,
+    # pre-ping so dropped Render connections recover instead of stalling.
+    def _args(url: str) -> dict:
+        if url.startswith("sqlite"):
+            return {"check_same_thread": False}
+        if url.startswith("postgres"):
+            return {"connect_timeout": 5}
+        return {}
+
     if db_url is not None:
         url = db_url
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        return create_engine(url, connect_args=connect_args)
+        return create_engine(url, connect_args=_args(url))
 
     if _engine is None:
         settings = get_settings()
         url = settings.resolved_db_url()
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        _engine = create_engine(url, connect_args=connect_args,
-                                pool_pre_ping=not url.startswith("sqlite"))
+        _engine = create_engine(url, connect_args=_args(url),
+                                pool_pre_ping=not url.startswith("sqlite"),
+                                pool_recycle=280)
+    return _engine
     return _engine
 
 

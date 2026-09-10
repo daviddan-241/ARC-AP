@@ -64,6 +64,22 @@ def _safe_credential(app: FastAPI, name: str) -> Optional[str]:
         return None
 
 
+def _task_engine_complete(provider):
+    """Build the single complete() used across chat, tasks and sub-agents."""
+    from arenaos.arena.base import ArenaEndpoint, ChatMessage, CompleteRequest
+
+    async def complete_fn(transcript: list[dict[str, str]]) -> str:
+        messages = [ChatMessage(role=m["role"], content=m["content"]) for m in transcript]
+        request = CompleteRequest(
+            endpoint=ArenaEndpoint(name="arena-web", base_url="https://arena.ai"),
+            messages=messages,
+        )
+        response = await provider.complete(request)
+        return response.content
+
+    return complete_fn
+
+
 def _build_engine(app: FastAPI) -> TaskEngine:
     """Task engine whose executor runs the REAL tool-using agent loop — shell,
     filesystem, git, browser, downloads, package installs, and lab.forge for
@@ -133,7 +149,21 @@ def create_app() -> FastAPI:
 
     if settings.arena_transport == "web":
         app.state.provider = _build_arena_provider(app)
+    # The one complete fn (arena.ai via the logged-in web session) — used by
+    # chat, the task engine, AND agent_spawn sub-agents. One model does all.
+    app.state.complete_fn = (_task_engine_complete(app.state.provider)
+                             if app.state.provider else None)
     app.state.engine = _build_engine(app)
+
+    # Seed the builtin skill library into the data dir (first boot only).
+    import shutil as _shutil
+    _builtin = Path(__file__).parent.parent / "skills" / "builtin"
+    _dest = Path(settings.data_dir) / "skills"
+    if _builtin.exists():
+        _dest.mkdir(parents=True, exist_ok=True)
+        for _sk in _builtin.iterdir():
+            if _sk.is_dir() and not (_dest / _sk.name).exists():
+                _shutil.copytree(_sk, _dest / _sk.name)
 
     app.include_router(auth_router.router)
     app.include_router(chat_router.router)

@@ -10,6 +10,24 @@
   <meta name="apple-mobile-web-app-title" content="ArenaOS" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/assets/icons/icon-180.png" />
+<script>
+    // The app shell always exactly covers the VISIBLE viewport, so the
+    // composer stays glued above the keyboard and scrolling can never
+    // push it away — works in iOS Safari/PWA too (where dvh alone fails).
+    (function () {
+      function fit() {
+        var v = window.visualViewport;
+        var h = v ? v.height : window.innerHeight;
+        document.documentElement.style.setProperty("--vvh", h + "px");
+      }
+      window.addEventListener("resize", fit);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", fit);
+        window.visualViewport.addEventListener("scroll", fit);
+      }
+      fit();
+    })();
+  </script>
 </head>
 <body class="bg-white text-ink">
   <div id="root"></div>

@@ -43,7 +43,7 @@ export default function Drawer({ open, onClose }: { open: boolean; onClose: () =
               className="mt-4 rounded-card bg-surface2 p-3.5 flex gap-3 items-center text-left active:scale-[0.99] transition-transform">
               <Sparkles size={18} className="text-accent shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-semibold text-ink">Try SuperGrok</div>
+                <div className="text-[14px] font-semibold text-ink">Try Arena Pro</div>
                 <div className="text-[12px] text-ink-dim">Early access to new features</div>
               </div>
               <ChevronRight size={16} className="text-ink-dim shrink-0" />

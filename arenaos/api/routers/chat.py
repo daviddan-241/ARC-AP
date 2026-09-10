@@ -169,9 +169,13 @@ async def send_message(conversation_id: str, body: MessageBody,
             if step.kind == "tool_call":
                 await queue.put({"kind": "tool_call", "tool": step.tool, "args": step.args})
             elif step.kind == "tool_result":
+                out = redact(str(step.result.get("output", "")))[:2000]
+                from arenaos.observability.threat import scan_for_threats
+                for t in scan_for_threats(out):
+                    out = f"[THREAT-SHIELD] {t}\n{out}"
                 await queue.put({"kind": "tool_result", "tool": step.tool,
                                  "ok": step.result.get("ok"),
-                                 "output": redact(str(step.result.get("output", "")))[:2000],
+                                 "output": out,
                                  "error": step.result.get("error", "")})
 
         async def produce() -> None:

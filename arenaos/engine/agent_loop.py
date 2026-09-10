@@ -44,8 +44,10 @@ class MaxStepsExceeded(RuntimeError):
 
 
 def build_system_prompt(registry: ToolRegistry, mood_prelude: str = "") -> str:
-    """List every real tool + the exact protocol the model must follow to call one."""
-    lines = [mood_prelude.strip(), "", "Available tools (call at most one per reply):"]
+    """Persona + every real tool + the exact protocol to call one."""
+    from arenaos.persona import persona_prelude
+    lines = [persona_prelude(), "", mood_prelude.strip(), "",
+             "Available tools (call at most one per reply):"]
     for tool in registry.list():
         schema = tool.args_model.model_json_schema().get("properties", {})
         lines.append(f"- {tool.name}: {tool.description} | args: {json.dumps(schema)}")

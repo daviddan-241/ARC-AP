@@ -53,9 +53,14 @@ class PersistentBrowser:
             if self._context is None:
                 self.profile_dir.mkdir(parents=True, exist_ok=True)
                 self._playwright = await async_playwright().start()
+                args = ["--disable-blink-features=AutomationControlled"]
+                # Optional Tor routing (set ARENA_TOR_PROXY, e.g.
+                # socks5://127.0.0.1:9050) — the whole browser then exits Tor.
+                if get_settings().tor_proxy:
+                    args.append(f"--proxy-server={get_settings().tor_proxy}")
+                    logger.info("browser routed through tor proxy %s", get_settings().tor_proxy)
                 self._context = await self._playwright.chromium.launch_persistent_context(
-                    str(self.profile_dir), headless=self.headless,
-                    args=["--disable-blink-features=AutomationControlled"],
+                    str(self.profile_dir), headless=self.headless, args=args,
                 )
                 logger.info("agent browser context launched (profile=%s)", self.profile_dir)
         return self._context

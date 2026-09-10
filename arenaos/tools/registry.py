@@ -43,5 +43,22 @@ def build_registry(sandbox: ExecutionSandbox, browser: PersistentBrowser,
     registry.register(EmailCodeTool(email_session_ref))
     registry.register(EmailTapLinkTool(email_session_ref))
     registry.register(EmailSendTool(email_session_ref))
+    # Skill library: list/use/create/install SKILL.md playbooks
+    from arenaos.tools.skills import (
+        SkillCreateTool, SkillInstallTool, SkillListTool, SkillUseTool)
+    registry.register(SkillListTool())
+    registry.register(SkillUseTool())
+    registry.register(SkillCreateTool())
+    registry.register(SkillInstallTool())
+    # Obsidian-compatible vault
+    from arenaos.tools.notes import NoteReadTool, NoteSearchTool, NoteWriteTool
+    registry.register(NoteWriteTool())
+    registry.register(NoteReadTool())
+    registry.register(NoteSearchTool())
+    # Multi-agent: nested agent loops (lazy ref -> complete fn + registry)
+    from arenaos.tools.agents import AgentSpawnTool
+    _state = forge_context.get("state")
+    registry.register(AgentSpawnTool({"get": lambda: (
+        getattr(_state, "complete_fn", None), getattr(_state, "tools", None))}))
     registry.register(ForgeTool(plugins_dir, forge_context))
     return registry

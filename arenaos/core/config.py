@@ -33,6 +33,8 @@ class Settings(BaseSettings):
 
     # Platform auth (single operator).
     operator_password: str = ""
+    # Tor routing for the agent's browser + http tools, e.g. "socks5://127.0.0.1:9050".
+    tor_proxy: str = ""
 
     # Deploy manager.
     render_api_token: str = ""

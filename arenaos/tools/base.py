@@ -36,7 +36,9 @@ class ToolContext:
         env: Optional[Mapping[str, str]] = None,
         emit: Optional[Callable[..., Awaitable[None]]] = None,
         redact: Optional[Callable[[str], str]] = None,
+        spawn_depth: int = 0,
     ) -> None:
+        self.spawn_depth = spawn_depth
         self.workspace = workspace
         self.project_id = project_id
         self.task_id = task_id

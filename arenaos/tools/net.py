@@ -34,7 +34,9 @@ class HttpRequestTool(BaseTool):
         if not args.url.startswith(("http://", "https://")):
             return ToolResult(ok=False, error="url must start with http:// or https://")
         try:
-            async with httpx.AsyncClient(follow_redirects=True, timeout=args.timeout) as client:
+            from arenaos.core.config import get_settings
+            _tor = get_settings().tor_proxy or None
+            async with httpx.AsyncClient(follow_redirects=True, timeout=args.timeout, proxy=_tor) as client:
                 response = await client.request(
                     args.method, args.url, headers=args.headers,
                     content=args.body, json=args.json_body,

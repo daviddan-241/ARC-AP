@@ -39,10 +39,18 @@ def login(body: LoginBody, request: Request, response: Response) -> dict:
         stored = user.password_hash if user else ""
         if not stored or hash_password(body.password) != stored:
             record_failed_login(client_key)
+            from arenaos.observability.threat import AuthHammerMonitor
+            if not hasattr(request.app.state, "auth_monitor"):
+                request.app.state.auth_monitor = AuthHammerMonitor()
+            if request.app.state.auth_monitor.record_failure(client_key):
+                Audit().log(client_key, "threat:auth_brute_force", "auth")
             raise HTTPException(status_code=401, detail="invalid password")
         user_id = user.id
     finally:
         session.close()
+    mon = getattr(request.app.state, "auth_monitor", None)
+    if mon:
+        mon.clear(client_key)
     response.set_cookie(SESSION_COOKIE, create_session_token(user_id),
                         httponly=True, samesite="lax", max_age=7 * 24 * 3600)
     Audit().log("operator", "login", "auth")

@@ -109,7 +109,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-[100dvh] w-full flex items-center justify-center bg-[#eceef1] md:p-6">
+    <div style={{ height: "var(--vvh, 100dvh)" }} className="w-full flex items-center justify-center bg-[#eceef1] md:p-6">
       <div className="w-full h-full bg-white overflow-hidden relative md:w-[390px] md:h-[844px] md:rounded-[44px] md:border-[10px] md:border-[#1a1a1a] md:shadow-lift flex flex-col">
         <StatusBar />
         <TopBar />

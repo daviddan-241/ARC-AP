@@ -20,7 +20,17 @@ export type SSEEvent =
   | { kind: "error"; error: string };
 
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, { credentials: "include", ...opts });
+  // No infinite spinners, ever: every request has a hard timeout.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25000);
+  let res: Response;
+  try {
+    res = await fetch(path, { credentials: "include", signal: ctrl.signal, ...opts });
+  } catch {
+    throw new Error("connection timed out");
+  } finally {
+    clearTimeout(timer);
+  }
   if (res.status === 401) throw new Error("auth required");
   if (!res.ok) {
     let detail = res.statusText;
