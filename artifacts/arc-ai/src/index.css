@@ -464,6 +464,21 @@
 .arc-gradient-text { background: linear-gradient(125deg, hsl(194 92% 70%), hsl(274 86% 76%) 55%, hsl(325 79% 72%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .arc-focus:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
 .arc-transition { transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, opacity .2s ease; }
+.arc-chat-page { background: linear-gradient(180deg, hsl(230 44% 8% / .18), transparent 26%); }
+.arc-chat-scroll { overscroll-behavior: contain; }
+.arc-composer-dock {
+  background: linear-gradient(180deg, transparent, hsl(230 44% 8% / .96) 26%);
+}
+.arc-composer { -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+[data-arc-theme="light"] body {
+  background:
+    radial-gradient(circle at 78% -12%, hsl(274 86% 63% / 0.10), transparent 34rem),
+    radial-gradient(circle at 8% 88%, hsl(194 92% 62% / 0.08), transparent 28rem),
+    hsl(226 30% 96%);
+}
 @media (max-width: 767px) {
-  .mobile-bottom-pad { padding-bottom: 5.5rem; }
+  .arc-shell { padding-bottom: env(safe-area-inset-bottom); }
+  .arc-shell > .flex > header { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+  .arc-chat-page { min-height: calc(100dvh - 4rem); }
+  .arc-composer-dock { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
 }
