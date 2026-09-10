@@ -3,7 +3,23 @@
 Every repo Danny listed, and where its capabilities actually live in ArenaOS.
 No fake claims: what's built is built; what's next is labeled next.
 
-## Built in (v6, this wave)
+## Built in (v7, this wave)
+
+**The real upstream repos are vendored into `vendor/` — actual source trees,
+not summaries** (~455k lines, 2.2k files). Three integration tools execute
+that real code end-to-end (`freqtrade_backtest`, `gpt_research`, `torbot_crawl`)
+and fail loudly with the exact install command when a repo's pip deps aren't
+installed in the current environment — never a fake success.
+
+| Vendored repo | Real size | Integration |
+|---|---|---|
+| freqtrade/freqtrade | 781 files, ~293k lines | `freqtrade_backtest` — real backtests via `python -m freqtrade` |
+| assafelovic/gpt-researcher | 820 files, ~80k lines | `gpt_research` — real plan-and-solve research agent |
+| DedSecInside/TorBot | 65 files | `torbot_crawl` — real Tor crawling via its CLI |
+| Z4nzu/hackingtool | 135 files | vendored for reference + recon skill workflows |
+| anthropics/skills | 419 files | the SKILL.md spec our skill system implements |
+
+## Built in (v6, previous wave)
 
 | Repo | Capability | Where it lives |
 |---|---|---|

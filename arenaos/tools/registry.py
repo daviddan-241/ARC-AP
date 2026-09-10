@@ -43,6 +43,10 @@ def build_registry(sandbox: ExecutionSandbox, browser: PersistentBrowser,
     registry.register(EmailCodeTool(email_session_ref))
     registry.register(EmailTapLinkTool(email_session_ref))
     registry.register(EmailSendTool(email_session_ref))
+    # Real integrations with the vendored upstream repos (freqtrade,
+    # gpt-researcher, TorBot) — execute the actual vendored code.
+    from arenaos.tools.integrations import register_integrations
+    register_integrations(registry)
     # Skill library: list/use/create/install SKILL.md playbooks
     from arenaos.tools.skills import (
         SkillCreateTool, SkillInstallTool, SkillListTool, SkillUseTool)

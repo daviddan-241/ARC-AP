@@ -1,0 +1,5 @@
+vendor/
+ui-react/node_modules/
+data/
+*.egg-info/
+.git/
