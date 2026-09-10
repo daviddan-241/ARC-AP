@@ -27,4 +27,10 @@ async def ws_arena_login(websocket: WebSocket) -> None:
         await websocket.close(code=4503, reason="arena web transport not initialized")
         return
 
-    await run_live_login(websocket, session)
+    page_id = websocket.query_params.get("page", "arena")
+    if page_id == "webmail":
+        # Watch the agent's own email tab — same shared profile, same overlay.
+        await run_live_login(websocket, session, page=await session.webmail_page())
+    else:
+        await run_live_login(websocket, session,
+                            start_url=websocket.query_params.get("url"))

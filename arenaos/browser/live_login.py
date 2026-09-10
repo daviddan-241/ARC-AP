@@ -31,17 +31,27 @@ FRAME_WIDTH = 480
 FRAME_HEIGHT = 854
 
 
-async def run_live_login(websocket: WebSocket, session: "ArenaWebSession") -> None:
-    """Drive one live-login WebSocket connection end to end against the real page."""
+async def run_live_login(websocket: WebSocket, session: "ArenaWebSession",
+                         start_url: str | None = None,
+                         page: Any | None = None) -> None:
+    """Drive one live browser WebSocket connection end to end against a real page.
+
+    start_url: any site the operator asked to open (Google, Discord, banking…);
+    defaults to the arena.ai chat page.
+    """
     await websocket.accept()
-    session.live_login_active = True
+    # Driving the arena page defers automated queries; a custom page (e.g. the
+    # agent's webmail tab) doesn't conflict, so only the arena page is guarded.
+    guarded = page is None
+    if guarded:
+        session.live_login_active = True
     cdp = None
     url_task = None
     try:
-        page = await session.get_page()
+        page = page if page is not None else await session.get_page()
         await page.set_viewport_size({"width": FRAME_WIDTH, "height": FRAME_HEIGHT})
         if page.url in ("about:blank", "", None):
-            await page.goto(session.config.chat_url, wait_until="domcontentloaded")
+            await page.goto(start_url or session.config.chat_url, wait_until="domcontentloaded")
 
         cdp = await page.context.new_cdp_session(page)
         cdp.on("Page.screencastFrame", lambda params: asyncio.ensure_future(
@@ -66,7 +76,8 @@ async def run_live_login(websocket: WebSocket, session: "ArenaWebSession") -> No
         except Exception:
             pass
     finally:
-        session.live_login_active = False
+        if guarded:
+            session.live_login_active = False
         if url_task:
             url_task.cancel()
         if cdp is not None:

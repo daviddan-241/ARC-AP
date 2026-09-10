@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /srv/arenaos
 COPY pyproject.toml README.md ./
 COPY arenaos ./arenaos
+COPY ui-react/dist ./ui-react/dist
 COPY plugins ./plugins
 COPY tests ./tests
 RUN pip install --no-cache-dir '.[postgres]'

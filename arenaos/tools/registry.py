@@ -35,5 +35,13 @@ def build_registry(sandbox: ExecutionSandbox, browser: PersistentBrowser,
     registry.register(DownloadFileTool())
     registry.register(InstallPackagesTool(sandbox))
     registry.register(BrowserTool(browser))
+    from arenaos.tools.email import (
+        EmailCodeTool, EmailReadTool, EmailSendTool, EmailTapLinkTool)
+    email_session_ref = {"get": lambda: getattr(
+        getattr(forge_context.get("state", None), "provider", None), "session", None)}
+    registry.register(EmailReadTool(email_session_ref))
+    registry.register(EmailCodeTool(email_session_ref))
+    registry.register(EmailTapLinkTool(email_session_ref))
+    registry.register(EmailSendTool(email_session_ref))
     registry.register(ForgeTool(plugins_dir, forge_context))
     return registry

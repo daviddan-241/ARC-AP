@@ -63,6 +63,20 @@ def create_conversation(body: ConversationBody, user=Depends(get_current_user)) 
     return {"id": conv_id, "title": body.title}
 
 
+@router.delete("/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str, user=Depends(get_current_user)) -> dict:
+    """Hard-delete a conversation and every message in it — real erasure
+    (used by Private Chat, which promises 'fully erased')."""
+    session: Session = _sessions()()
+    try:
+        session.query(Message).filter(Message.conversation_id == conversation_id).delete()
+        session.query(Conversation).filter(Conversation.id == conversation_id).delete()
+        session.commit()
+    finally:
+        session.close()
+    return {"deleted": conversation_id}
+
+
 @router.get("/conversations/{conversation_id}/messages")
 def get_messages(conversation_id: str, user=Depends(get_current_user)) -> list[dict]:
     session: Session = _sessions()()

@@ -22,6 +22,42 @@ security boundaries only (jail, secrets, permissions, audit).
 - **UI**: consumer chat aesthetic — centered greeting, pill input (+ / mic),
   drawer with recents & library, streaming replies, Thoughts panel
 
+## Frontend (React)
+
+The UI is a React 18 + TypeScript SPA (`ui-react/`), styled with Tailwind CSS
+tokens, animated with Framer Motion, icons from Lucide. Design: strict light
+Grok/ChatGPT/Gemini hybrid — pure white surfaces, `#007AFF` accent, pill
+inputs, soft shadows, iPhone frame preview on desktop.
+
+Screens: Chat (streaming + thoughts), Thoughts (search results / exploration
+progress), Skills (live tool registry, runnable from the UI), Automations
+(real autonomous tasks + hub), Library (uploaded documents & media), Private
+Chat (ephemeral — hard-deleted on exit), and the In-App Browser — the real
+page streamed from the server's Chromium over an authenticated WebSocket, so
+you can log into ANY site (Google, Discord, banking) and cookies persist
+server-side.
+
+Development:
+
+    cd ui-react && npm install && npm run dev   # vite dev server, proxies /api to :8000
+
+Production: `npm run build` (committed as `dist/`), served by FastAPI with SPA
+fallback — client-side routes deep-link correctly.
+
+## The agent's own email
+
+The operator signs into the agent's email account ONCE via the in-app browser
+(Mail tab). Cookies live in the shared persistent Chromium profile — from then
+on everything is automatic, with zero login/password/email fields in the UI:
+
+- arena.ai asks for an emailed code → the agent reads it from its own inbox
+  and completes the login by itself (headless, on demand)
+- Tools: `email_read` (inbox), `email_verify_code` (waits for a fresh OTP),
+  `email_tap_link` (clicks confirm/verify/magic links), `email_send`
+  (composes and sends real mail)
+- The in-app browser streams BOTH live tabs — the arena page and the agent's
+  mail tab (Mail/Arena tabs + expand button)
+
 ## Deploy on Render (free tier)
 
 1. Push this repo to GitHub.

@@ -7,6 +7,9 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+
+from fastapi import HTTPException
+from fastapi.responses import FileResponse
 from pathlib import Path
 
 from arenaos.api.routers import auth as auth_router
@@ -149,9 +152,30 @@ def create_app() -> FastAPI:
     app.state.plugins = load_plugins({"app": app, "state": app.state})
 
     # Static UI mount goes LAST so real routes always win over the catch-all.
-    static_dir = Path(__file__).parent.parent / "ui" / "static"
-    if static_dir.is_dir():
-        app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="ui")
+    # The React build (ui-react/dist) wins when present — real SPA fallback so
+    # client-side routes (/chat, /skills, /library…) deep-link correctly.
+    react_dist = Path(__file__).parent.parent.parent / "ui-react" / "dist"
+    if (react_dist / "index.html").is_file():
+
+        @app.get("/", include_in_schema=False)
+        async def react_home() -> FileResponse:
+            return FileResponse(str(react_dist / "index.html"))
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def react_spa(full_path: str) -> FileResponse:
+            """Serve real files when they exist; otherwise the SPA shell so
+            client-side routes (/chat, /skills, /library…) deep-link correctly."""
+            if full_path.startswith(("api/", "ws/")):
+                raise HTTPException(status_code=404)
+            if full_path and not full_path.startswith(".."):
+                candidate = (react_dist / full_path).resolve()
+                if str(candidate).startswith(str(react_dist.resolve())) and candidate.is_file():
+                    return FileResponse(str(candidate))
+            return FileResponse(str(react_dist / "index.html"))
+    else:
+        static_dir = Path(__file__).parent.parent / "ui" / "static"
+        if static_dir.is_dir():
+            app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="ui")
 
     return app
 

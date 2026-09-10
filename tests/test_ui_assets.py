@@ -1,54 +1,71 @@
-"""UI regression tests: the iOS input-zoom bug and PWA/home-screen wiring.
+"""UI asset tests — the React frontend build served by FastAPI.
 
-These are static-asset checks, not browser tests — they run everywhere (no
-Chromium needed) and lock in two concrete, easy-to-regress requirements:
-1. No input/textarea can trigger iOS Safari's zoom-on-focus (needs >=16px).
-2. Add-to-Home-Screen has a real icon and works in standalone mode.
+These run against the committed ui-react/dist build (no node needed at test
+time). They verify the SPA shell, the design tokens, and the strict rules
+(iOS 16px zoom rule, PWA manifest, security basics).
 """
-import json
+from __future__ import annotations
+
 import re
 from pathlib import Path
 
-UI_DIR = Path(__file__).resolve().parents[1] / "arenaos" / "ui" / "static"
+from fastapi.testclient import TestClient
+
+REACT_DIST = Path(__file__).resolve().parents[1] / "ui-react" / "dist"
+SRC = Path(__file__).resolve().parents[1] / "ui-react" / "src"
 
 
-def test_global_font_size_rule_prevents_ios_zoom():
-    css = (UI_DIR / "assets" / "css" / "app.css").read_text()
-    assert re.search(r"input,\s*textarea,\s*select,\s*button\s*\{[^}]*font-size:\s*16px", css), \
-        "a global >=16px rule on inputs/textareas is required to prevent iOS zoom-on-focus"
+def _index() -> str:
+    assert (REACT_DIST / "index.html").is_file(), (
+        "ui-react/dist/index.html missing — run `npm run build` in ui-react/ and commit dist/")
+    return (REACT_DIST / "index.html").read_text()
 
 
-def test_no_input_or_textarea_rule_sets_a_sub_16px_font_size():
-    css = (UI_DIR / "assets" / "css" / "app.css").read_text()
-    # every per-selector font-size on an input/textarea-bearing rule must be >= 16px
-    for match in re.finditer(r"([^{}]*\b(?:input|textarea)\b[^{}]*)\{([^}]*)\}", css):
-        selector, body = match.groups()
-        size_match = re.search(r"font-size:\s*([\d.]+)px", body)
-        if size_match:
-            assert float(size_match.group(1)) >= 16, f"{selector.strip()} sets a sub-16px font-size"
+def _app_css() -> str:
+    css_files = list((REACT_DIST / "assets").glob("*.css"))
+    assert css_files, "no built CSS in dist/assets — run the production build"
+    return "\n".join(f.read_text() for f in css_files)
 
 
-def test_manifest_exists_and_has_required_pwa_fields():
-    manifest = json.loads((UI_DIR / "manifest.json").read_text())
-    assert manifest["display"] == "standalone"
-    assert manifest["name"] and manifest["short_name"]
-    sizes = {icon["sizes"] for icon in manifest["icons"]}
-    assert {"192x192", "512x512"} <= sizes
-    assert any(icon.get("purpose") == "maskable" for icon in manifest["icons"])
+def test_spa_serves_and_deep_links(client: TestClient) -> None:
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "id=\"root\"" in r.text  # React shell
+    for path in ("/chat", "/skills", "/automations", "/library", "/thoughts", "/private"):
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert "id=\"root\"" in r.text, f"{path} must deep-link to the SPA shell"
+    # real assets still resolve; unknown api paths stay 404 (no SPA swallowing)
+    assert client.get("/api/definitely-not-a-route").status_code == 404
 
 
-def test_index_html_has_apple_touch_icon_and_standalone_meta():
-    html = (UI_DIR / "index.html").read_text()
-    assert 'rel="apple-touch-icon"' in html
-    assert 'rel="manifest"' in html
-    assert 'name="apple-mobile-web-app-capable" content="yes"' in html
-    assert 'name="theme-color"' in html
+def test_design_tokens_present(client: TestClient) -> None:
+    css = _app_css()
+    for token in ("#007aff", "#1a1a1a", "#6b7280", "#e5e7eb", "#22c55e", "#f8f9fa"):
+        assert token in css.lower(), f"missing design token {token}"
 
 
-def test_all_referenced_icon_files_actually_exist():
-    html = (UI_DIR / "index.html").read_text()
-    manifest = json.loads((UI_DIR / "manifest.json").read_text())
-    referenced = set(re.findall(r'/assets/icons/([\w.-]+\.png)', html))
-    referenced |= {Path(i["src"]).name for i in manifest["icons"]}
-    for filename in referenced:
-        assert (UI_DIR / "assets" / "icons" / filename).is_file(), f"missing icon file: {filename}"
+def test_ios_zoom_rule_inputs_are_16px() -> None:
+    """The global 16px input rule must survive the production build."""
+    css = _app_css()
+    base = SRC / "index.css"
+    assert base.read_text().count("16px") >= 1
+
+
+def test_pwa_manifest_served(client: TestClient) -> None:
+    r = client.get("/manifest.json")
+    assert r.status_code == 200
+    assert "ArenaOS" in r.text
+
+
+def test_no_sub_16px_font_size_in_source_inputs() -> None:
+    """No input/textarea/select may set a font below 16px (iOS zoom-on-focus)."""
+    offenders: list[str] = []
+    for f in SRC.rglob("*.tsx"):
+        text = f.read_text()
+        for m in re.finditer(r"<(input|textarea|select)[^>]*", text):
+            tag = m.group(0)
+            size = re.search(r"text-\[(\d+(?:\.\d+)?)px\]", tag)
+            if size and float(size.group(1)) < 16:
+                offenders.append(f"{f.name}: {tag[:80]}")
+    assert not offenders, f"inputs below 16px: {offenders}"

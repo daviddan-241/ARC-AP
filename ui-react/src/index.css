@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ArenaOS — strict light design system (Grok/ChatGPT/Gemini reference set) */
+:root {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --surface2: #f5f5f7;
+  --ink: #1a1a1a;
+  --ink-dim: #6b7280;
+  --accent: #007aff;
+  --line: #e5e7eb;
+  --success: #22c55e;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body, #root { height: 100%; }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif;
+  background: #eceef1; /* desktop: subtle backdrop for the phone frame */
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* every input >= 16px — iOS Safari zoom rule (tested in the suite) */
+input, textarea, select, button { font-size: 16px; font-family: inherit; }
+
+::-webkit-scrollbar { width: 0; height: 0; }
+* { scrollbar-width: none; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@layer components {
+  .card { @apply bg-white rounded-card border border-line; }
+  .pill-btn { @apply rounded-full px-4 py-2.5 text-[15px] font-semibold transition-colors; }
+  .screen-pad { @apply px-4 pb-4; }
+  .section-label { @apply text-[13px] font-semibold text-ink-dim tracking-wide; }
+}

@@ -72,6 +72,13 @@ logger = logging.getLogger(__name__)
 # ==============================================================================
 
 
+from arenaos.email.webmail import (
+    CODE_INPUT_SELECTORS,
+    DEFAULT_WEBMAIL_URL,
+    WebmailSession,
+)
+
+
 class ArenaWebLoginRequired(RuntimeError):
     """Raised when login is required for arena.ai but no credentials are available or login failed."""
 
@@ -100,6 +107,9 @@ class WebSessionConfig(BaseModel):
 
     chat_url: str = "https://arena.ai"
     login_url: str = ""
+    # The agent's own webmail (logged in once via the in-app browser, then
+    # automatic): used to fetch email verification codes for ANY login flow.
+    webmail_url: str = DEFAULT_WEBMAIL_URL
     # Selectors below were verified against the LIVE arena.ai site (2026-09-07).
     terms_accept_selectors: list[str] = Field(
         default_factory=lambda: [
@@ -213,6 +223,8 @@ class ArenaWebSession:
         # WebSocket view (Settings > Connect arena.ai). Automated queries defer
         # rather than fighting the user for control of the same page.
         self.live_login_active = False
+        # The agent's own webmail tab, opened in the SAME persistent context.
+        self._webmail_page: Optional[Page] = None
 
     async def get_page(self) -> Page:
         """Retrieve or initialize the active Playwright Page in a persistent browser context."""
@@ -243,6 +255,51 @@ class ArenaWebSession:
                 self._page = await self._context.new_page()
 
             return self._page
+
+    async def webmail_page(self) -> Page:
+        """The agent's own email tab — same profile as arena.ai, so the ONE
+        webmail login done via the in-app browser works for everything."""
+        await self.get_page()  # ensures the persistent context is launched
+        assert self._context is not None
+        if self._webmail_page is None or self._webmail_page.is_closed():
+            self._webmail_page = await self._context.new_page()
+        return self._webmail_page
+
+    async def _complete_code_login(self, page: Page, code_el) -> None:
+        """A verification-code prompt is on the arena page — the agent reads
+        the code from its own email and finishes the login by itself."""
+        wm = WebmailSession(self.webmail_page, self.config.webmail_url)
+        try:
+            from arenaos.email.webmail import extract_codes
+            baseline_text = await wm.inbox_text()
+            baseline = {c for c, _ in extract_codes(baseline_text)}
+            logger.info("arena login needs a code — polling the agent's email…")
+            code = await wm.latest_code(baseline=baseline, timeout_s=100.0, poll_s=8.0)
+        finally:
+            await wm.close()
+
+        await code_el.fill(code)  # type: ignore[attr-defined]
+        submit = await self._find_first_visible(page, [
+            "button[type='submit']",
+            "button:has-text('Verify')",
+            "button:has-text('Continue')",
+            "button:has-text('Submit')",
+        ])
+        if submit:
+            await submit.click()
+        else:
+            await code_el.press("Enter")  # type: ignore[attr-defined]
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=10000)
+        except Exception:
+            await asyncio.sleep(2.0)
+
+        if await self._find_first_visible(page, self.config.input_selectors) is not None:
+            logger.info("arena email-code login completed automatically.")
+            return
+        raise ArenaWebLoginRequired(
+            "The emailed code was submitted, but the chat interface did not appear."
+        )
 
     async def ensure_logged_in(self, page: Page) -> None:
         """Verify session is logged in, inject cookies or fill login form if needed."""
@@ -295,6 +352,14 @@ class ArenaWebSession:
             login_el is not None,
             has_creds,
         )
+
+        # Arena sometimes logs in by EMAILING A CODE — no password at all.
+        # The agent reads that code from its own webmail automatically.
+        code_el = await self._find_first_visible(page, CODE_INPUT_SELECTORS)
+        if code_el is not None:
+            logger.info("Verification-code field detected — auto-completing from the agent's email.")
+            await self._complete_code_login(page, code_el)
+            return
 
         if login_el is not None or input_el is None:
             if not has_creds:
@@ -349,6 +414,12 @@ class ArenaWebSession:
                 )
                 if input_el_after is not None:
                     logger.info("Login submitted successfully. Chat input is visible.")
+                    return
+
+                # Credentials accepted, then a code prompt appeared — auto-read it.
+                code_el_after = await self._find_first_visible(page, CODE_INPUT_SELECTORS)
+                if code_el_after is not None:
+                    await self._complete_code_login(page, code_el_after)
                     return
 
                 raise ArenaWebLoginRequired(
