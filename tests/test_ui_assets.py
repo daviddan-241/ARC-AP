@@ -57,7 +57,8 @@ def test_ios_zoom_rule_inputs_are_16px() -> None:
 def test_pwa_manifest_served(client: TestClient) -> None:
     r = client.get("/manifest.json")
     assert r.status_code == 200
-    assert "ArenaOS" in r.text
+    assert "ARC" in r.text  # rebranded: ARC wordmark
+    assert '"name": "ARC"' in r.text and '"#0A0D24"' in r.text
 
 
 def test_no_sub_16px_font_size_in_source_inputs() -> None:
