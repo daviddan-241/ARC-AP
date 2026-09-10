@@ -25,6 +25,7 @@ export default function Browser() {
 
   const [addr, setAddr] = useState("");
   const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string>("");
   const wsRef = useRef<WebSocket | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const hiddenRef = useRef<HTMLInputElement>(null);
@@ -38,18 +39,40 @@ export default function Browser() {
   useEffect(() => {
     if (!open) return;
     setFrame("");
+    setError("");
     setAddr(targetUrl.replace(/^https?:\/\//, ""));
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${proto}//${location.host}/ws/browser/arena-login?url=${encodeURIComponent(targetUrl)}&page=${page}`);
     wsRef.current = ws;
+
+    // honest cold-start feedback: no frame within 45s means something is
+    // actually wrong server-side — say so instead of spinning forever.
+    let gotFrame = false;
+    const watchdog = window.setTimeout(() => {
+      if (!gotFrame) setError(
+        "The server browser isn't responding. On a cold Render instance the first launch can take up to a minute — try again, and if it persists check that ARENA_TRANSPORT=web is set and the instance has enough RAM (512MB free tier is tight for Chromium).");
+    }, 45_000);
+
     ws.onopen = () => setConnected(true);
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data) as WSMsg;
-      if (msg.type === "frame") setFrame(msg.data);
+      if (msg.type === "frame") { gotFrame = true; setError(""); setFrame(msg.data); }
       else if (msg.type === "url") { setAddr(msg.url.replace(/^https?:\/\//, "")); }
+      else if (msg.type === "error") setError(msg.error);
     };
-    ws.onclose = () => { setConnected(false); if (useStore.getState().browserOpen) closeBrowser(); };
-    return () => { ws.close(); wsRef.current = null; };
+    ws.onclose = (e) => {
+      window.clearTimeout(watchdog);
+      setConnected(false);
+      // 4401 = auth, 4503 = browser transport not initialized on the server.
+      if (e.code === 4503 && useStore.getState().browserOpen) {
+        setError("Browser transport isn't running on the server (ARENA_TRANSPORT must be 'web' and Chromium installed). Automated chat still works.");
+      } else if (e.code === 4401 && useStore.getState().browserOpen) {
+        setError("Session expired — log in again, then reopen the browser.");
+      } else if (!gotFrame && useStore.getState().browserOpen) {
+        setError("The browser connection closed before the page loaded. Try again in a moment (cold start).");
+      }
+    };
+    return () => { window.clearTimeout(watchdog); ws.close(); wsRef.current = null; };
   }, [open, targetUrl, page, closeBrowser]);
 
   // external open requests (source cards etc.)
@@ -81,9 +104,9 @@ export default function Browser() {
   };
 
   return (
-    <div className="absolute inset-0 z-[100] bg-white flex flex-col">
+    <div className="absolute inset-0 z-[100] bg-bg flex flex-col">
       {/* chrome: back, forward, reload, url bar, close */}
-      <div className="flex items-center gap-1 px-3 pt-[calc(env(safe-area-inset-top)+8px)] pb-2.5 border-b border-line bg-white">
+      <div className="flex items-center gap-1 px-3 pt-[calc(env(safe-area-inset-top)+8px)] pb-2.5 border-b border-line bg-surface">
         <button aria-label="Back" onClick={() => send({ type: "back" })} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface"><ArrowLeft size={19} className="text-ink" /></button>
         <button aria-label="Forward" onClick={() => send({ type: "forward" })} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface"><ArrowRight size={19} className="text-ink" /></button>
         <button aria-label="Reload" onClick={() => send({ type: "reload" })} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface"><RotateCw size={17} className="text-ink" /></button>
@@ -109,7 +132,7 @@ export default function Browser() {
       <div className="flex items-center gap-1 px-3 py-1.5 border-b border-line bg-surface2/50">
         {([["arena", "Arena", Globe], ["webmail", "Mail", Mail]] as const).map(([id, label, Icon]) => (
           <button key={id} onClick={() => openBrowser(id === "arena" ? targetUrl : "https://mail.google.com", id)}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${page === id ? "bg-white text-ink shadow-soft" : "text-ink-dim"}`}>
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${page === id ? "bg-surface2 text-ink shadow-soft" : "text-ink-dim"}`}>
             <Icon size={13} />
             {label}
           </button>
@@ -117,7 +140,19 @@ export default function Browser() {
       </div>
 
       {/* live viewport */}
-      <div className="flex-1 relative bg-[#111] flex items-center justify-center overflow-hidden">
+      <div className="flex-1 relative bg-[#05061a] flex items-center justify-center overflow-hidden">
+        {error && (
+          <div className="absolute inset-0 z-10 bg-bg/95 flex flex-col items-center justify-center gap-4 px-8 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-surface2 flex items-center justify-center text-[24px]">⚠️</div>
+            <p className="text-[14.5px] text-ink leading-relaxed max-w-sm">{error}</p>
+            <div className="flex gap-2">
+              <button onClick={() => { setError(""); setFrame(""); setAddr(targetUrl.replace(/^https?:\/\//, "")); const u = targetUrl; useStore.getState().closeBrowser(); setTimeout(() => useStore.getState().openBrowser(u), 50); }}
+                className="bg-accent text-white rounded-full px-5 py-2.5 text-[14px] font-semibold active:scale-95 transition-transform">Retry</button>
+              <button onClick={closeBrowser}
+                className="border border-line text-ink rounded-full px-5 py-2.5 text-[14px] font-semibold active:scale-95 transition-transform">Close</button>
+            </div>
+          </div>
+        )}
         {frame ? (
           <img
             ref={imgRef}
@@ -156,7 +191,7 @@ export default function Browser() {
         />
       </div>
 
-      <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 bg-white border-t border-line flex items-center justify-between gap-3">
+      <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 bg-surface border-t border-line flex items-center justify-between gap-3">
         <p className="text-[12px] text-ink-dim">It's the real site, live from the server's browser — log into anything, cookies persist.</p>
         <button onClick={closeBrowser} className="shrink-0 bg-ink text-white rounded-full px-4 py-2 text-[13px] font-semibold">Done</button>
       </div>

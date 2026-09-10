@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot } from "lucide-react";
+
 import { api } from "../lib/api";
 
 export default function Login({ onSuccess }: { onSuccess: () => void }) {
@@ -22,13 +22,11 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-bg flex items-center justify-center p-6">
       <div className="w-full max-w-[340px] flex flex-col items-center">
-        <div className="w-16 h-16 rounded-3xl bg-surface2 flex items-center justify-center">
-          <Bot size={44} strokeWidth={1.5} className="text-accent" />
-        </div>
-        <h1 className="text-[30px] font-bold tracking-tight mt-4 text-ink">ArenaOS</h1>
-        <p className="text-[14px] text-ink-dim mt-1">Your autonomous AI operating system</p>
+        <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-accent-magenta via-accent to-accent-cyan flex items-center justify-center text-white text-[34px] font-black shadow-lift">A</div>
+        <h1 className="text-[38px] font-black tracking-tight mt-5 arc-gradient-text">ARC</h1>
+        <p className="text-[14.5px] text-ink-dim mt-1">Your autonomous agent. Unrestricted. Always on.</p>
         <input
           type="password"
           value={pw}

@@ -4,13 +4,15 @@
 
 /* ArenaOS — strict light design system (Grok/ChatGPT/Gemini reference set) */
 :root {
-  --bg: #ffffff;
-  --surface: #f8f9fa;
-  --surface2: #f5f5f7;
-  --ink: #1a1a1a;
-  --ink-dim: #6b7280;
-  --accent: #007aff;
-  --line: #e5e7eb;
+  --bg: #0a0d24;
+  --surface: #12152e;
+  --surface2: #1a1e3d;
+  --ink: #f3f4fa;
+  --ink-dim: #9298c0;
+  --accent: #9b4dff;
+  --accent-cyan: #4ec1ff;
+  --accent-magenta: #d946c8;
+  --line: #262a4e;
   --success: #22c55e;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -23,9 +25,17 @@
 html, body, #root { height: 100%; }
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif;
-  background: #eceef1; /* desktop: subtle backdrop for the phone frame */
+  background: #05061a; /* desktop: near-black navy backdrop for the phone frame */
   color: var(--ink);
   overflow: hidden;
+}
+
+/* the ARC wordmark gradient — magenta -> violet -> cyan, straight off the logo */
+.arc-gradient-text {
+  background: linear-gradient(100deg, var(--accent-magenta), var(--accent), var(--accent-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* every input >= 16px — iOS Safari zoom rule (tested in the suite) */
@@ -37,7 +47,7 @@ input, textarea, select, button { font-size: 16px; font-family: inherit; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 @layer components {
-  .card { @apply bg-white rounded-card border border-line; }
+  .card { @apply bg-surface rounded-card border border-line; }
   .pill-btn { @apply rounded-full px-4 py-2.5 text-[15px] font-semibold transition-colors; }
   .screen-pad { @apply px-4 pb-4; }
   .section-label { @apply text-[13px] font-semibold text-ink-dim tracking-wide; }

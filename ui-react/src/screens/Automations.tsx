@@ -73,7 +73,7 @@ export default function Automations() {
         {composing && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }} className="overflow-hidden">
-            <div className="rounded-card border border-line bg-white p-4 mt-4 shadow-soft">
+            <div className="rounded-card border border-line bg-surface p-4 mt-4 shadow-soft">
               <textarea value={goal} onChange={(e) => setGoal(e.target.value)} rows={3}
                 placeholder="Describe an automation…"
                 className="w-full bg-surface rounded-xl p-3 text-[15px] border border-line outline-none resize-none" />
@@ -92,7 +92,7 @@ export default function Automations() {
 
       <div className="mt-4">
         {tasks.map((t) => (
-          <div key={t.id} className="mb-3 rounded-card border border-line bg-white p-4 shadow-soft">
+          <div key={t.id} className="mb-3 rounded-card border border-line bg-surface p-4 shadow-soft">
             <div className="flex items-start justify-between gap-3">
               <p className="text-[15px] font-semibold text-ink flex-1">{t.goal}</p>
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${statusChip(t.status)}`}>{t.status}</span>

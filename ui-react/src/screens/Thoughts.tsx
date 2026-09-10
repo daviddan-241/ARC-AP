@@ -27,7 +27,7 @@ export default function Thoughts() {
   const sectionTitle = label.startsWith("Exploring") ? label : `Exploring ${label.toLowerCase()}`;
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-bg">
       {/* header: back + Thoughts + more menu (exact mockup) */}
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+8px)] pb-3 border-b border-line">
         <button onClick={() => navigate(-1)} aria-label="Back" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface active:scale-95 transition-all">

@@ -28,7 +28,7 @@ export default function SourceCard({
       onKeyDown={(e) => e.key === "Enter" && openBrowser(source.url)}
       className="w-full flex items-start gap-3 bg-surface rounded-card px-3.5 py-3 mb-2 text-left hover:bg-surface2 transition-colors cursor-pointer active:scale-[0.99] transition-transform"
     >
-      <div className="w-9 h-9 rounded-full bg-white border border-line flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-9 h-9 rounded-full bg-surface2 border border-line flex items-center justify-center shrink-0 overflow-hidden">
         {source.logo ? (
           <img src={source.logo} alt="" width={20} height={20} className="rounded-sm" />
         ) : (

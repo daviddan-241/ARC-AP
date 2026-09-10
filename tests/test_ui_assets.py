@@ -41,7 +41,9 @@ def test_spa_serves_and_deep_links(client: TestClient) -> None:
 
 def test_design_tokens_present(client: TestClient) -> None:
     css = _app_css()
-    for token in ("#007aff", "#1a1a1a", "#6b7280", "#e5e7eb", "#22c55e", "#f8f9fa"):
+    # ARC design tokens (dark navy + magenta->violet->cyan, sampled from the
+    # ARC wordmark image Danny provided)
+    for token in ("#9b4dff", "#d946c8", "#4ec1ff", "#0a0d24", "#12152e", "#22c55e"):
         assert token in css.lower(), f"missing design token {token}"
 
 

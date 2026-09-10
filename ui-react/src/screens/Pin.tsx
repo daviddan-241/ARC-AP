@@ -57,7 +57,7 @@ export default function Pin({ onSuccess, onFallback }: { onSuccess: () => void; 
   }[mode];
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="min-h-screen bg-bg flex items-center justify-center">
       <div className="flex flex-col items-center px-6">
         <Bot size={36} strokeWidth={1.5} className="text-accent" />
         <h1 className="text-[22px] font-bold mt-3 text-ink">{title}</h1>

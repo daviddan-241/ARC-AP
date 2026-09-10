@@ -47,7 +47,7 @@ function TopBar() {
 
   return (
     <>
-      <header className="flex items-center gap-1 px-3 pt-[calc(env(safe-area-inset-top)+10px)] pb-2 bg-white/80 backdrop-blur-md z-30">
+      <header className="flex items-center gap-1 px-3 pt-[calc(env(safe-area-inset-top)+10px)] pb-2 bg-bg/80 backdrop-blur-md z-30">
         <button aria-label="Menu" onClick={() => setDrawer(true)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface active:scale-95 transition-transform">
           <Menu size={21} strokeWidth={1.7} className="text-ink" />
         </button>
@@ -57,10 +57,10 @@ function TopBar() {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full hover:bg-surface text-[15px] font-semibold text-ink capitalize"
           >
             {mood.replace(/_/g, " ")}
-            <svg width="10" height="6" viewBox="0 0 10 6" className={menuOpen ? "rotate-180 transition-transform" : "transition-transform"}><path d="M1 1l4 4 4-4" stroke="#6B7280" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="10" height="6" viewBox="0 0 10 6" className={menuOpen ? "rotate-180 transition-transform" : "transition-transform"}><path d="M1 1l4 4 4-4" stroke="#9298C0" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
           {menuOpen && (
-            <div className="absolute top-full mt-1 w-48 bg-white rounded-2xl border border-line shadow-soft py-1.5 z-40">
+            <div className="absolute top-full mt-1 w-48 bg-surface rounded-2xl border border-line shadow-soft py-1.5 z-40">
               {moods.map((m) => (
                 <button key={m.key} onClick={() => { setMood(m.key); setMenuOpen(false); }}
                   className={`w-full text-left px-4 py-2.5 text-[14.5px] capitalize hover:bg-surface ${m.key === mood ? "text-accent font-semibold" : "text-ink"}`}>
@@ -94,7 +94,7 @@ export default function App() {
     })();
   }, []);
 
-  if (checking) return <div className="min-h-screen bg-white" />;
+  if (checking) return <div className="min-h-screen bg-bg" />;
 
   if (!authed) {
     return <Login onSuccess={() => { setStoreAuthed(true); setAuthed(true); }} />;
@@ -109,8 +109,8 @@ export default function App() {
   }
 
   return (
-    <div style={{ height: "var(--vvh, 100dvh)" }} className="w-full flex items-center justify-center bg-[#eceef1] md:p-6">
-      <div className="w-full h-full bg-white overflow-hidden relative md:w-[390px] md:h-[844px] md:rounded-[44px] md:border-[10px] md:border-[#1a1a1a] md:shadow-lift flex flex-col">
+    <div style={{ height: "var(--vvh, 100dvh)" }} className="w-full flex items-center justify-center bg-bg md:p-6">
+      <div className="w-full h-full bg-bg overflow-hidden relative md:w-[390px] md:h-[844px] md:rounded-[44px] md:border-[10px] md:border-[#05061a] md:shadow-lift flex flex-col">
         <StatusBar />
         <TopBar />
         <div className="flex-1 overflow-hidden relative">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowUp, Mic, Plus, X } from "lucide-react";
 import { api, uploadsProjectId } from "../lib/api";
 
@@ -25,19 +25,6 @@ export default function ChatInput({ onSend }: { onSend: (text: string) => void }
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const recRef = useRef<SRLike | null>(null);
-
-  // keyboard stays glued to the bar (iOS Safari + Android)
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const onResize = () => {
-      const gap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      const el = document.getElementById("kb-dock");
-      if (el) el.style.paddingBottom = gap > 0 ? `${gap + 8}px` : "";
-    };
-    vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
-  }, []);
 
   const autoGrow = () => {
     const ta = taRef.current;
@@ -91,7 +78,7 @@ export default function ChatInput({ onSend }: { onSend: (text: string) => void }
   };
 
   return (
-    <div id="kb-dock" className="pb-[calc(env(safe-area-inset-bottom)+10px)] pt-1.5 px-4 bg-white">
+    <div id="kb-dock" className="pb-[calc(env(safe-area-inset-bottom)+10px)] pt-1.5 px-4 bg-bg">
       {uploads.length > 0 && (
         <div className="flex gap-2 flex-wrap mb-2">
           {uploads.map((name, i) => (
