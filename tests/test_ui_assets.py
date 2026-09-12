@@ -31,7 +31,7 @@ def test_spa_serves_and_deep_links(client: TestClient) -> None:
     r = client.get("/")
     assert r.status_code == 200
     assert "id=\"root\"" in r.text  # React shell
-    for path in ("/chat", "/skills", "/automations", "/library", "/thoughts", "/private"):
+    for path in ("/chat", "/skills", "/automations", "/library", "/projects", "/thoughts", "/private"):
         r = client.get(path)
         assert r.status_code == 200, path
         assert "id=\"root\"" in r.text, f"{path} must deep-link to the SPA shell"
@@ -148,3 +148,57 @@ def test_mic_button_gives_honest_feedback_when_unsupported() -> None:
     assert "Dictation isn't supported in this browser" in src
     assert "Microphone permission was denied" in src  # honest error mapping
     assert 'role="status"' in src  # announced to screen readers too
+
+
+def test_auth_gate_uses_dynamic_viewport_height_not_raw_dvh() -> None:
+    """Regression: the login/PIN screen used a hardcoded 100dvh, the same
+    unreliable-on-keyboard-open unit the composer fix already replaced
+    elsewhere. 'the login whatever the keyboard it's still not okay' traces
+    straight to this -- it needed the same --app-vh fix, just never got it."""
+    src = (SRC / "components" / "AuthGate.tsx").read_text()
+    assert "var(--app-vh" in src
+    assert "min-h-[100dvh]" not in src
+
+
+def test_sidebar_matches_reference_nav_structure() -> None:
+    """Nav order matches the reference: Library / Projects / Plugins always
+    visible, everything else behind More; Recents (real chat history) sits
+    below the nav, not above it; New chat + profile are pinned at the
+    bottom of the sidebar."""
+    src = (SRC / "App.tsx").read_text()
+    assert '{ href: "/library", label: "Library"' in src
+    assert '{ href: "/projects", label: "Projects"' in src
+    assert '{ href: "/connections", label: "Plugins"' in src
+    assert "SidebarFooter" in src and "New chat" in src
+
+
+def test_projects_page_is_real_crud_not_mock() -> None:
+    """Projects page must hit the real /api/projects endpoints -- list,
+    create, delete -- no hardcoded/mock project rows."""
+    src = (SRC / "pages" / "ProjectsPage.tsx").read_text()
+    assert "api.projects()" in src
+    assert "api.createProject(" in src
+    assert "api.deleteProject(" in src
+
+
+def test_profile_sheet_has_no_fake_account_rows() -> None:
+    """Only real, backend-verified rows: arena.ai session, agent email,
+    a link to real settings, and a log-out that calls the real endpoint.
+    No Personalization/Subscription/Parental-controls -- this platform has
+    no backing for those and Danny's rule is no fake buttons."""
+    # strip comments so the doc explaining WHICH fake rows were deliberately
+    # left out doesn't trip the very check it's documenting
+    raw = (SRC / "components" / "ProfileSheet.tsx").read_text()
+    src = re.sub(r"/\*.*?\*/", "", raw, flags=re.S)
+    assert "api.logout()" in src
+    assert "Subscription" not in src
+    assert "Personalization" not in src
+    assert "Parental" not in src
+
+
+def test_logout_actually_resets_the_auth_gate() -> None:
+    """Regression: setAuthed(false) alone left the gate stuck on phase
+    'ready' with nothing rendered, since the effect that unlocks only fires
+    when authed becomes TRUE. Must also handle the reverse transition."""
+    src = (SRC / "components" / "AuthGate.tsx").read_text()
+    assert 'if (!authed && phase === "ready") setPhase("password")' in src

@@ -61,10 +61,19 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     if (authed && phase !== "ready") setPhase(pinHash ? "pin" : "ready");
   }, [authed, phase, pinHash]);
 
+  // real logout: once `authed` flips back to false (see ProfileSheet's Log
+  // out, which calls the real /api/auth/logout first), drop straight back
+  // to the password screen. Without this the gate stayed stuck on "ready"
+  // with nothing rendered -- authed was false but phase never moved off
+  // "ready", so neither branch below matched.
+  useEffect(() => {
+    if (!authed && phase === "ready") setPhase("password");
+  }, [authed, phase]);
+
   if (phase === "ready" && authed) return <>{children}</>;
 
   return (
-    <div className="arc-shell flex min-h-[100dvh] items-center justify-center px-6">
+    <div className="arc-shell flex min-h-[var(--app-vh,100dvh)] items-center justify-center px-6">
       <div className="arc-card w-full max-w-sm rounded-3xl p-8">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <BrandMark />

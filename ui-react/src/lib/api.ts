@@ -8,7 +8,7 @@ export type ToolInfo = { name: string; description?: string; args?: Record<strin
 export type Task = { id: string; goal: string; status: string; task_type?: string; created_at?: string; error?: string };
 export type Proc = { id?: string; handle?: string; cmd?: string } & Record<string, unknown>;
 export type FileEntry = { name: string; size: number; dir?: boolean };
-export type Project = { id: string; name: string; workspace_path?: string; description?: string };
+export type Project = { id: string; name: string; workspace_path?: string; description?: string; status?: string; created_at?: string };
 export type MemoryItem = { id: string; layer: string; content: string; key?: string; created_at?: string };
 export type VaultItem = { name: string; kind: string };
 export type SSEEvent =
@@ -47,6 +47,7 @@ const json = (body: unknown): RequestInit => ({ headers: { "Content-Type": "appl
 export const api = {
   // auth / settings
   login: (password: string) => req<{ ok?: boolean }>("/api/auth/login", { method: "POST", ...json({ password }) }),
+  logout: () => req<{ ok?: boolean }>("/api/auth/logout", { method: "POST" }),
   settings: () => req<Record<string, string>>("/api/settings"),
   // Boot/session check with a caller-chosen budget: free-host cold starts run
   // 30-60s, so the login gate escalates rather than failing at the default 25s.
@@ -77,6 +78,7 @@ export const api = {
   // files
   projects: () => req<Project[]>("/api/projects"),
   createProject: (name: string, description?: string) => req<Project>("/api/projects", { method: "POST", ...json({ name, description }) }),
+  deleteProject: (id: string) => req<{ deleted: string }>(`/api/projects/${id}`, { method: "DELETE" }),
   files: (projectId: string, path = ".") => req<FileEntry[]>(`/api/projects/${projectId}/files?path=${encodeURIComponent(path)}`),
   uploadFile: async (projectId: string, file: File) => {
     const fd = new FormData();

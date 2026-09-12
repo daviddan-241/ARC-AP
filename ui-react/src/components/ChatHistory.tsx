@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
-import { Loader2, MessageSquarePlus, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { api, type Conversation } from "../lib/api";
 import { useStore } from "../lib/store";
 
 /** Real chat history: lists actual conversations from the backend (no mock),
- * lets you switch, start a new one, or delete one. Used in both the desktop
- * sidebar and the mobile drawer so "recent chats" genuinely exists — before
- * this there was no way to see or return to a past conversation at all. */
+ * lets you search, switch, or delete one. "New chat" itself lives as the
+ * pinned bottom action in the sidebar (see App.tsx Shell) so it always
+ * stays reachable even while this list scrolls — matching the reference
+ * layout where Library/Projects/Plugins/More sit above "Recents" and the
+ * new-chat action is pinned at the very bottom next to the profile icon. */
 export default function ChatHistory({ onNavigate }: { onNavigate?: () => void }) {
   const conversationId = useStore((s) => s.conversationId);
   const setConversation = useStore((s) => s.setConversation);
@@ -14,6 +16,7 @@ export default function ChatHistory({ onNavigate }: { onNavigate?: () => void })
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [query, setQuery] = useState("");
 
   const load = async () => {
     setLoading(true); setErr("");
@@ -28,12 +31,6 @@ export default function ChatHistory({ onNavigate }: { onNavigate?: () => void })
 
   useEffect(() => { load(); }, [conversationId]);
 
-  const startNew = () => {
-    setConversation(null);
-    resetChat();
-    onNavigate?.();
-  };
-
   const open = (id: string) => {
     setConversation(id);
     onNavigate?.();
@@ -44,18 +41,32 @@ export default function ChatHistory({ onNavigate }: { onNavigate?: () => void })
     try {
       await api.deleteConversation(id);
       setItems((prev) => prev.filter((c) => c.id !== id));
-      if (id === conversationId) startNew();
+      if (id === conversationId) { setConversation(null); resetChat(); }
     } catch { /* real error, but deleting is best-effort here — refresh will show truth */ }
   };
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((c) => (c.title || "untitled chat").toLowerCase().includes(q));
+  }, [items, query]);
+
   return (
     <div className="min-w-0">
-      <button onClick={startNew}
-        className="arc-transition mb-2 flex w-full items-center gap-3 rounded-xl border border-white/[.09] px-3 py-2.5 text-sm font-medium text-slate-200 hover:border-cyan-300/30 hover:bg-white/[.05] hover:text-white active:scale-[.98]">
-        <MessageSquarePlus size={16} className="text-cyan-300" />New chat
-      </button>
-      <div className="mb-1.5 flex items-center justify-between px-3">
-        <p className="arc-mono text-[10px] uppercase tracking-[.22em] text-slate-600">Recent</p>
+      {/* real search over your actual chat titles -- client-side filter of
+         the same list already loaded, not a decorative icon */}
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/[.09] bg-white/[.03] px-3 py-2 focus-within:border-cyan-300/30">
+        <Search size={14} className="shrink-0 text-slate-500" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search chats"
+          className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600" />
+        {query && (
+          <button onClick={() => setQuery("")} aria-label="Clear search" className="text-slate-500 hover:text-white">
+            <X size={13} />
+          </button>
+        )}
+      </div>
+      <div className="mb-1.5 flex items-center justify-between px-1">
+        <p className="text-[12.5px] font-semibold text-slate-300">Recents</p>
         <button aria-label="Refresh history" onClick={load} className="text-slate-600 hover:text-slate-300">
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
         </button>
@@ -65,10 +76,13 @@ export default function ChatHistory({ onNavigate }: { onNavigate?: () => void })
       )}
       {err && <p className="px-3 py-2 text-[12px] text-rose-300">{err}</p>}
       {!loading && !err && items.length === 0 && (
-        <p className="px-3 py-2 text-[12px] text-slate-600">No chats yet — start one above.</p>
+        <p className="px-3 py-2 text-[12px] text-slate-600">No chats yet — tap "New chat" below to start one.</p>
       )}
-      <div className="max-h-[38vh] space-y-0.5 overflow-y-auto">
-        {items.map((c) => (
+      {!loading && !err && items.length > 0 && filtered.length === 0 && (
+        <p className="px-3 py-2 text-[12px] text-slate-600">No chats match "{query}".</p>
+      )}
+      <div className="max-h-[42vh] space-y-0.5 overflow-y-auto">
+        {filtered.map((c) => (
           <button key={c.id} onClick={() => open(c.id)}
             className={`group arc-transition flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] ${c.id === conversationId ? "bg-white/[.1] text-white" : "text-slate-400 hover:bg-white/[.05] hover:text-white"}`}>
             <span className="min-w-0 flex-1 truncate">{c.title || "Untitled chat"}</span>

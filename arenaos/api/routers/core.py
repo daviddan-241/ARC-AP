@@ -48,8 +48,9 @@ def list_projects(user=Depends(get_current_user)) -> list[dict]:
     session: Session = get_sessionmaker()()
     try:
         rows = session.query(Project).order_by(Project.created_at.desc()).all()
-        return [{"id": p.id, "name": p.name, "slug": p.slug,
-                 "workspace_path": p.workspace_path, "status": p.status} for p in rows]
+        return [{"id": p.id, "name": p.name, "slug": p.slug, "description": p.description,
+                 "workspace_path": p.workspace_path, "status": p.status,
+                 "created_at": p.created_at.isoformat() if p.created_at else None} for p in rows]
     finally:
         session.close()
 
@@ -70,6 +71,26 @@ def create_project(body: ProjectBody, request: Request,
     finally:
         session.close()
     return {"id": project_id, "name": body.name, "workspace_path": str(workspace)}
+
+
+@router.delete("/projects/{project_id}")
+def delete_project(project_id: str, request: Request, user=Depends(get_current_user)) -> dict:
+    """Real delete: removes the DB row AND the workspace directory on disk --
+    no soft-delete flag left behind, no orphaned files."""
+    project = _project(request, project_id)
+    ws_path = Path(project.workspace_path) if project.workspace_path else None
+    session: Session = get_sessionmaker()()
+    try:
+        row = session.get(Project, project_id)
+        if row is not None:
+            session.delete(row)
+            session.commit()
+    finally:
+        session.close()
+    if ws_path and ws_path.is_dir():
+        import shutil
+        shutil.rmtree(ws_path, ignore_errors=True)
+    return {"deleted": project_id}
 
 
 def _workspace_of(request: Request, project_id: str) -> Path:

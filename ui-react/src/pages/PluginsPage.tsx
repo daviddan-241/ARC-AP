@@ -118,7 +118,7 @@ export default function PluginsPage() {
 
   return (
     <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
-      <PageHeader eyebrow="Connections / 06" title="Connections" description="Everything ARC is actually connected to. Keys are stored encrypted server-side — never in this page, never in chat." />
+      <PageHeader eyebrow="Plugins / 06" title="Plugins" description="Everything ARC is actually connected to. Keys are stored encrypted server-side — never in this page, never in chat." />
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500"><Loader2 size={16} className="animate-spin" />Checking live status…</div>
       ) : (
