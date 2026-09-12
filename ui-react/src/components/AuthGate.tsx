@@ -78,18 +78,18 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <BrandMark />
           <div>
-            <h1 className="arc-title text-2xl font-bold text-white">ARC<span className="text-cyan-300">.</span></h1>
-            <p className="mt-1 text-xs text-slate-500">Operator access only</p>
+            <h1 className="arc-title text-2xl font-bold text-[#111827]">ARC<span className="text-[#007AFF]">.</span></h1>
+            <p className="mt-1 text-xs text-[#6B7280]">Operator access only</p>
           </div>
         </div>
         {(phase === "loading" || phase === "waking") && (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-          <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 size={16} className="animate-spin" />{phase === "waking" ? "Host still waking up…" : "Checking session…"}</div>
-          <p className="text-[11px] text-slate-600">Free hosting cold start can take up to a minute — attempt {attempt}/{BOOT_BUDGETS_MS.length}.</p>
+          <div className="flex items-center gap-2 text-sm text-[#6B7280]"><Loader2 size={16} className="animate-spin" />{phase === "waking" ? "Host still waking up…" : "Checking session…"}</div>
+          <p className="text-[11px] text-[#9CA3AF]">Free hosting cold start can take up to a minute — attempt {attempt}/{BOOT_BUDGETS_MS.length}.</p>
         </div>
       )}
       {phase === "password" && offline && (
-        <div className="mb-4 rounded-xl border border-amber-300/25 bg-amber-300/10 p-3 text-[12px] text-amber-200">
+        <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-600">
           The server didn't respond (still cold-starting or offline). You can retry the connection or type your password once it's up.
           <button onClick={retryBoot} className="mt-2 block w-full rounded-lg bg-amber-300/20 px-3 py-2 font-medium text-amber-100 active:scale-95">Retry connection</button>
         </div>
@@ -127,14 +127,14 @@ function PasswordForm({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.04] px-3 py-2.5 focus-within:border-cyan-300/40">
-        <KeyRound size={15} className="text-slate-500" />
+      <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-black/[.04] px-3 py-2.5 focus-within:border-[#007AFF]/50">
+        <KeyRound size={15} className="text-[#6B7280]" />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus
-          placeholder="Operator password" className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
+          placeholder="Operator password" className="flex-1 bg-transparent text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
       </div>
-      {error && <p className="text-xs text-rose-300">{error}</p>}
+      {error && <p className="text-xs text-rose-600">{error}</p>}
       <button type="submit" disabled={busy || !password}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cyan-300 to-violet-500 py-2.5 text-sm font-bold text-[#10132f] disabled:opacity-40 active:scale-[.98]">
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#007AFF] py-2.5 text-sm font-bold text-white disabled:opacity-40 active:scale-[.98]">
         {busy ? <Loader2 size={15} className="animate-spin" /> : <LockKeyhole size={15} />}Unlock
       </button>
     </form>
@@ -170,18 +170,18 @@ function PinForm({ pinHash, onDone }: { pinHash: string; onDone: () => void }) {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-3">
-      <p className="mb-1 flex items-center gap-1.5 text-center text-[11px] text-slate-500"><ShieldCheck size={12} className="mx-auto" />{isNew ? "Create your 4-digit PIN" : "Enter your 4-digit PIN"}</p>
+      <p className="mb-1 flex items-center gap-1.5 text-center text-[11px] text-[#6B7280]"><ShieldCheck size={12} className="mx-auto" />{isNew ? "Create your 4-digit PIN" : "Enter your 4-digit PIN"}</p>
       <input inputMode="numeric" pattern="\d*" maxLength={4} value={pin} autoFocus
         onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-        className="w-full rounded-xl border border-white/[.1] bg-white/[.04] py-3 text-center text-2xl font-bold tracking-[.6em] text-white outline-none focus:border-cyan-300/40" placeholder="••••" />
+        className="w-full rounded-xl border border-[#E5E7EB] bg-black/[.04] py-3 text-center text-2xl font-bold tracking-[.6em] text-[#111827] outline-none focus:border-[#007AFF]/50" placeholder="••••" />
       {isNew && (
         <input inputMode="numeric" pattern="\d*" maxLength={4} value={confirmPin}
           onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-          className="w-full rounded-xl border border-white/[.1] bg-white/[.04] py-3 text-center text-2xl font-bold tracking-[.6em] text-white outline-none focus:border-cyan-300/40" placeholder="••••" />
+          className="w-full rounded-xl border border-[#E5E7EB] bg-black/[.04] py-3 text-center text-2xl font-bold tracking-[.6em] text-[#111827] outline-none focus:border-[#007AFF]/50" placeholder="••••" />
       )}
-      {error && <p className="text-xs text-rose-300">{error}</p>}
+      {error && <p className="text-xs text-rose-600">{error}</p>}
       <button type="submit" disabled={busy}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cyan-300 to-violet-500 py-2.5 text-sm font-bold text-[#10132f] disabled:opacity-40 active:scale-[.98]">
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#007AFF] py-2.5 text-sm font-bold text-white disabled:opacity-40 active:scale-[.98]">
         {busy ? <Loader2 size={15} className="animate-spin" /> : null}{isNew ? "Set PIN" : "Unlock"}
       </button>
     </form>

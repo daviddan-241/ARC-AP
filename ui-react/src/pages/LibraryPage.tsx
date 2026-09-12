@@ -40,7 +40,7 @@ export default function LibraryPage() {
     <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Memory / 05" title="Library" description="Files you've attached and the agent has produced — stored on the server, downloadable anytime." action={
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
-          className="flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.04] px-4 py-2.5 text-xs font-bold text-white hover:bg-white/[.08] disabled:opacity-40">
+          className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-black/[.04] px-4 py-2.5 text-xs font-bold text-[#111827] hover:bg-black/[.06] disabled:opacity-40">
           {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}Add to library
         </button>
       } />
@@ -48,34 +48,34 @@ export default function LibraryPage() {
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-3 text-slate-600" />
+          <Search size={16} className="absolute left-3 top-3 text-[#9CA3AF]" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search your library"
-            className="arc-focus w-full rounded-xl border border-white/[.09] bg-white/[.035] py-2.5 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600" />
+            className="arc-focus w-full rounded-xl border border-[#E5E7EB] bg-black/[.03] py-2.5 pl-9 pr-3 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
         </div>
       </div>
 
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Documents</h2>
-          <span className="text-xs text-slate-600">{docs.length} items</span>
+          <h2 className="text-sm font-semibold text-[#111827]">Documents</h2>
+          <span className="text-xs text-[#9CA3AF]">{docs.length} items</span>
         </div>
         {loaded && filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/[.12] px-6 py-12 text-center">
-            <FileText size={24} className="mx-auto mb-3 text-slate-600" />
-            <p className="text-sm text-slate-300">{files.length === 0 ? "No documents yet" : "No matching documents"}</p>
-            <p className="mt-2 text-xs text-slate-600">Attach a file in Chat or upload one here — it goes to the server for real.</p>
+          <div className="rounded-2xl border border-dashed border-[#E5E7EB] px-6 py-12 text-center">
+            <FileText size={24} className="mx-auto mb-3 text-[#9CA3AF]" />
+            <p className="text-sm text-[#374151]">{files.length === 0 ? "No documents yet" : "No matching documents"}</p>
+            <p className="mt-2 text-xs text-[#9CA3AF]">Attach a file in Chat or upload one here — it goes to the server for real.</p>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {docs.map((f) => (
               <div key={f.name} className="arc-card flex items-center gap-3 rounded-2xl p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><FileText size={17} /></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><FileText size={17} /></div>
                 <span className="min-w-0 flex-1">
-                  <b className="block truncate text-sm text-white">{f.name}</b>
-                  <small className="text-xs text-slate-600">{(f.size / 1024).toFixed(1)} KB</small>
+                  <b className="block truncate text-sm text-[#111827]">{f.name}</b>
+                  <small className="text-xs text-[#9CA3AF]">{(f.size / 1024).toFixed(1)} KB</small>
                 </span>
                 {projectId && <a href={api.fileDownloadUrl(projectId, f.name)} download aria-label={`Download ${f.name}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white"><Download size={16} /></a>}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]"><Download size={16} /></a>}
               </div>
             ))}
           </div>
@@ -85,14 +85,14 @@ export default function LibraryPage() {
       {images.length > 0 && (
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Media</h2>
-            <span className="text-xs text-slate-600">{images.length} images</span>
+            <h2 className="text-sm font-semibold text-[#111827]">Media</h2>
+            <span className="text-xs text-[#9CA3AF]">{images.length} images</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {images.map((f) => projectId ? (
               <a key={f.name} href={api.fileDownloadUrl(projectId, f.name)} target="_blank" rel="noreferrer"
-                className="group flex aspect-[1.3] items-center justify-center rounded-2xl border border-white/[.08] bg-white/[.02] hover:border-cyan-300/30">
-                <ImageIcon size={20} className="text-slate-600 group-hover:text-cyan-300" />
+                className="group flex aspect-[1.3] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-black/[.02] hover:border-[#007AFF]/40">
+                <ImageIcon size={20} className="text-[#9CA3AF] group-hover:text-[#007AFF]" />
               </a>
             ) : null)}
           </div>

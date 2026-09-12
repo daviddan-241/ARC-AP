@@ -101,43 +101,43 @@ export default function BrowserOverlay() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#020313]">
-      <div className="flex items-center gap-1 border-b border-white/[.07] bg-[#080b25]/90 px-3 py-2.5">
-        <button aria-label="Back" onClick={() => send({ type: "back" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white"><ArrowLeft size={19} /></button>
-        <button aria-label="Forward" onClick={() => send({ type: "forward" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white"><ArrowRight size={19} /></button>
-        <button aria-label="Reload" onClick={() => send({ type: "reload" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white"><RotateCw size={16} /></button>
-        <form onSubmit={(e) => { e.preventDefault(); gotoTyped(); }} className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-white/[.09] bg-white/[.04] px-3 py-2">
-          <Lock size={12} className="shrink-0 text-slate-500" />
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[#111827]">
+      <div className="flex items-center gap-1 border-b border-[#E5E7EB] bg-[#F9FAFB]/90 px-3 py-2.5">
+        <button aria-label="Back" onClick={() => send({ type: "back" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]"><ArrowLeft size={19} /></button>
+        <button aria-label="Forward" onClick={() => send({ type: "forward" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]"><ArrowRight size={19} /></button>
+        <button aria-label="Reload" onClick={() => send({ type: "reload" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]"><RotateCw size={16} /></button>
+        <form onSubmit={(e) => { e.preventDefault(); gotoTyped(); }} className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#E5E7EB] bg-black/[.04] px-3 py-2">
+          <Lock size={12} className="shrink-0 text-[#6B7280]" />
           <input value={addr} onChange={(e) => setAddr(e.target.value)} enterKeyHint="go"
-            className="min-w-0 flex-1 truncate bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
+            className="min-w-0 flex-1 truncate bg-transparent text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF]"
             placeholder="Search or enter address" />
           <span className={`h-2 w-2 shrink-0 rounded-full ${connected ? "bg-emerald-400" : "bg-slate-700"}`} />
         </form>
-        <button aria-label={expanded ? "Shrink" : "Expand"} onClick={() => setExpanded(!expanded)} className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white">
+        <button aria-label={expanded ? "Shrink" : "Expand"} onClick={() => setExpanded(!expanded)} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]">
           {expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
         </button>
-        <button aria-label="Close" onClick={closeBrowser} className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white"><X size={19} /></button>
+        <button aria-label="Close" onClick={closeBrowser} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]"><X size={19} /></button>
       </div>
 
       {/* live tab selector: the arena page or the agent's own mail — both are real server tabs */}
-      <div className="flex items-center gap-1 border-b border-white/[.07] bg-[#0a0d2b]/60 px-3 py-1.5">
+      <div className="flex items-center gap-1 border-b border-[#E5E7EB] bg-white/60 px-3 py-1.5">
         {([["arena", "Arena", Globe, "https://arena.ai"], ["webmail", "Mail", Mail, "https://mail.google.com"], ["free", "Web", Compass, "https://www.google.com"]] as const).map(([id, label, Icon, url]) => (
           <button key={id} onClick={() => openBrowser(url, id)}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${page === id ? "bg-white/[.1] text-white" : "text-slate-500 hover:text-white"}`}>
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${page === id ? "bg-black/[.06] text-[#111827]" : "text-[#6B7280] hover:text-[#111827]"}`}>
             <Icon size={13} />{label}
           </button>
         ))}
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#020313]">
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#111827]">
         {error && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#020313]/95 px-8 text-center">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#111827]/95 px-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-400/10 text-xl">⚠️</div>
-            <p className="max-w-sm text-[14px] leading-relaxed text-slate-300">{error}</p>
+            <p className="max-w-sm text-[14px] leading-relaxed text-[#374151]">{error}</p>
             <div className="flex gap-2">
               <button onClick={() => { setError(""); const u = targetUrl; useStore.getState().closeBrowser(); setTimeout(() => useStore.getState().openBrowser(u), 50); }
-              } className="rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 px-5 py-2.5 text-[13px] font-bold text-[#10132f] active:scale-95">Retry</button>
-              <button onClick={closeBrowser} className="rounded-full border border-white/[.1] px-5 py-2.5 text-[13px] font-semibold text-slate-300 hover:text-white">Close</button>
+              } className="rounded-full bg-[#007AFF] px-5 py-2.5 text-[13px] font-bold text-white active:scale-95">Retry</button>
+              <button onClick={closeBrowser} className="rounded-full border border-[#E5E7EB] px-5 py-2.5 text-[13px] font-semibold text-[#374151] hover:text-[#111827]">Close</button>
             </div>
           </div>
         )}
@@ -150,7 +150,7 @@ export default function BrowserOverlay() {
             onWheel={(e) => { e.preventDefault(); send({ type: "scroll", dx: Math.round(e.deltaX), dy: Math.round(e.deltaY) }); }}
             onClick={() => hiddenRef.current?.focus()} />
         ) : (
-          !error && <div className="flex flex-col items-center gap-3 text-[14px] text-slate-500">
+          !error && <div className="flex flex-col items-center gap-3 text-[14px] text-[#6B7280]">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-cyan-300" />
             Loading {page === "webmail" ? "the agent's mail" : targetUrl.replace(/^https?:\/\//, "")}…
           </div>

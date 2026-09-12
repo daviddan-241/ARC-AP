@@ -51,43 +51,44 @@ export default function ChatHistory({ onNavigate }: { onNavigate?: () => void })
     return items.filter((c) => (c.title || "untitled chat").toLowerCase().includes(q));
   }, [items, query]);
 
+  // Real conversations only: if the backend has none, this whole section
+  // stays out of the sidebar (spec: hide the noisy empty Recents entirely).
+  if (!loading && !err && items.length === 0) return null;
+
   return (
     <div className="min-w-0">
       {/* real search over your actual chat titles -- client-side filter of
          the same list already loaded, not a decorative icon */}
-      <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/[.09] bg-white/[.03] px-3 py-2 focus-within:border-cyan-300/30">
-        <Search size={14} className="shrink-0 text-slate-500" />
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3 py-2 focus-within:border-[#007AFF]/40">
+        <Search size={14} className="shrink-0 text-[#6B7280]" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search chats"
-          className="w-full bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600" />
+          className="w-full bg-transparent text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
         {query && (
-          <button onClick={() => setQuery("")} aria-label="Clear search" className="text-slate-500 hover:text-white">
+          <button onClick={() => setQuery("")} aria-label="Clear search" className="text-[#6B7280] hover:text-[#111827]">
             <X size={13} />
           </button>
         )}
       </div>
       <div className="mb-1.5 flex items-center justify-between px-1">
-        <p className="text-[12.5px] font-semibold text-slate-300">Recents</p>
-        <button aria-label="Refresh history" onClick={load} className="text-slate-600 hover:text-slate-300">
+        <p className="text-[12.5px] font-semibold text-[#374151]">Recents</p>
+        <button aria-label="Refresh history" onClick={load} className="text-[#9CA3AF] hover:text-[#374151]">
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
       {loading && items.length === 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 text-[12.5px] text-slate-600"><Loader2 size={13} className="animate-spin" />Loading…</div>
+        <div className="flex items-center gap-2 px-3 py-2 text-[12.5px] text-[#9CA3AF]"><Loader2 size={13} className="animate-spin" />Loading…</div>
       )}
-      {err && <p className="px-3 py-2 text-[12px] text-rose-300">{err}</p>}
-      {!loading && !err && items.length === 0 && (
-        <p className="px-3 py-2 text-[12px] text-slate-600">No chats yet — tap "New chat" below to start one.</p>
-      )}
+      {err && <p className="px-3 py-2 text-[12px] text-rose-600">{err}</p>}
       {!loading && !err && items.length > 0 && filtered.length === 0 && (
-        <p className="px-3 py-2 text-[12px] text-slate-600">No chats match "{query}".</p>
+        <p className="px-3 py-2 text-[12px] text-[#9CA3AF]">No chats match "{query}".</p>
       )}
       <div className="max-h-[42vh] space-y-0.5 overflow-y-auto">
         {filtered.map((c) => (
           <button key={c.id} onClick={() => open(c.id)}
-            className={`group arc-transition flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] ${c.id === conversationId ? "bg-white/[.1] text-white" : "text-slate-400 hover:bg-white/[.05] hover:text-white"}`}>
+            className={`group arc-transition flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] ${c.id === conversationId ? "bg-black/[.06] text-[#111827]" : "text-[#4B5563] hover:bg-black/[.04] hover:text-[#111827]"}`}>
             <span className="min-w-0 flex-1 truncate">{c.title || "Untitled chat"}</span>
             <span onClick={(e) => remove(c.id, e)} role="button" aria-label="Delete chat"
-              className="shrink-0 rounded-lg p-1 text-slate-600 opacity-0 hover:bg-rose-400/10 hover:text-rose-300 group-hover:opacity-100">
+              className="shrink-0 rounded-lg p-1 text-[#9CA3AF] opacity-0 hover:bg-rose-400/10 hover:text-rose-600 group-hover:opacity-100">
               <Trash2 size={13} />
             </span>
           </button>

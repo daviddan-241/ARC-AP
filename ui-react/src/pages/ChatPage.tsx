@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDown, BrainCircuit, Check, ChevronDown, ChevronRight, Loader2, Mic, Paperclip, Plus, Send, SlidersHorizontal, Sparkles, X, Zap } from "lucide-react";
-import { Link } from "wouter";
+import { ArrowDown, BrainCircuit, Check, ChevronDown, ChevronRight, Loader2, Mic, Paperclip, PlugZap, Plus, Send, SlidersHorizontal, Sparkles, X, Zap } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { api, streamTurn, uploadsProjectId } from "../lib/api";
 import type { ChatMessage } from "../lib/api";
 import { faviconUrl, useStore } from "../lib/store";
@@ -105,6 +105,8 @@ export default function ChatPage() {
   // message, plus an INSTANT (non-animated) follow-scroll while streaming,
   // so there's never an animation for a manual scroll to fight.
   const [atBottom, setAtBottom] = useState(true);
+  const [connectCard, setConnectCard] = useState<{ connector: string; reason: string } | null>(null);
+  const [, navigate] = useLocation();
   useEffect(() => {
     const el = scrollRef.current;
     const sentinel = bottomRef.current;
@@ -205,6 +207,10 @@ export default function ChatPage() {
           reply.model = ev.model ?? null;
           useStore.setState((s) => ({ messages: [...s.messages] }));
           setQuickReplies(["What can you do next?", "Show me the files you touched", "Run another tool"]);
+        } else if (ev.kind === "connect_required") {
+          // real backend signal: a tool just failed because its connector
+          // isn't set up — surface the right connect card automatically.
+          setConnectCard({ connector: String(ev.connector ?? ""), reason: String(ev.reason ?? "") });
         } else if (ev.kind === "error") {
           if (openStep) resolveStep(openStep, false, ev.error);
           reply.content += `\n⚠ ${ev.error}`;
@@ -216,6 +222,14 @@ export default function ChatPage() {
     } finally {
       streamRef.current = false;
       setThinking(false);
+      // Voice setting (Settings → General → Voice, real browser speechSynthesis):
+      // read the finished answer aloud when the operator turned it on.
+      if (localStorage.getItem("arcReadAloud") === "1" && typeof speechSynthesis !== "undefined" && reply.content.trim()) {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(reply.content.slice(0, 1200));
+        u.rate = 1.02;
+        speechSynthesis.speak(u);
+      }
     }
   };
 
@@ -231,7 +245,7 @@ export default function ChatPage() {
               <h2 className="arc-title text-4xl font-bold sm:text-5xl">
                 <span className="arc-gradient-text">Hello, Danny.</span>
               </h2>
-              <p className="mt-2 text-sm text-slate-500">What should we make real today?</p>
+              <p className="mt-2 text-sm text-[#6B7280]">What should we make real today?</p>
             </div>
           ) : (
             <>
@@ -239,14 +253,14 @@ export default function ChatPage() {
                 <MessageBubble key={i} m={m} isLast={i === messages.length - 1} thinking={thinking}
                   steps={steps} sources={sources} />
               ))}
-              {thinking && <div className="flex items-center gap-2 pb-3 text-[13px] text-slate-500"><Loader2 size={14} className="animate-spin" />Thinking…</div>}
+              {thinking && <div className="flex items-center gap-2 pb-3 text-[13px] text-[#6B7280]"><Loader2 size={14} className="animate-spin" />Thinking…</div>}
             </>
           )}
           <div className="pb-3 pt-3">
             {!showEmpty && quickReplies.length > 0 && !thinking && (
               <div className="arc-no-scrollbar flex items-center gap-2 overflow-x-auto">
                 {quickReplies.map((c) => (
-                  <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="shrink-0 whitespace-nowrap rounded-full border border-cyan-300/20 bg-cyan-300/[.06] px-3.5 py-1.5 text-[12.5px] font-medium text-cyan-200 active:scale-95">{c}</button>
+                  <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="shrink-0 whitespace-nowrap rounded-full border border-[#007AFF]/30 bg-[#007AFF]/[.06] px-3.5 py-1.5 text-[12.5px] font-medium text-[#007AFF] active:scale-95">{c}</button>
                 ))}
               </div>
             )}
@@ -258,7 +272,7 @@ export default function ChatPage() {
       {showEmpty && !thinking && (
         <div className="arc-no-scrollbar mx-auto flex w-full max-w-3xl items-center gap-2 overflow-x-auto px-4 pb-3 sm:px-8">
           {CHIPS.map((c) => (
-            <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="arc-card shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[12.5px] font-medium text-slate-300 hover:text-white active:scale-95">{c.length > 44 ? c.slice(0, 44) + "…" : c}</button>
+            <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="arc-card shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[12.5px] font-medium text-[#374151] hover:text-[#111827] active:scale-95">{c.length > 44 ? c.slice(0, 44) + "…" : c}</button>
           ))}
         </div>
       )}
@@ -275,7 +289,7 @@ export default function ChatPage() {
             exit={{ opacity: 0, y: 8, x: "-50%" }}
             onClick={() => scrollToBottom(true)}
             aria-label="Jump to latest message"
-            className="arc-jump-btn absolute bottom-[6.5rem] left-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/[.12] bg-[#111531] text-slate-200 shadow-xl active:scale-95 sm:bottom-[6.75rem]">
+            className="arc-jump-btn absolute bottom-[6.5rem] left-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#1F2937] shadow-xl active:scale-95 sm:bottom-[6.75rem]">
             <ArrowDown size={16} />
           </motion.button>
         )}
@@ -285,35 +299,72 @@ export default function ChatPage() {
          Fast/Deep + attach live one tap away in the sheet below, so the main
          row stays exactly as clean as the reference shots. No outline ring —
          .arc-composer-pill:focus-within only shifts the border color. */}
+      {/* auto-popup connect card — shown ONLY when the backend emitted a real
+          connect_required event (a tool just failed for a missing connector). */}
+      <AnimatePresence>
+        {connectCard && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm sm:items-center"
+            onClick={() => setConnectCard(null)}>
+            <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }} onClick={(e) => e.stopPropagation()}
+              className="arc-card w-full max-w-sm rounded-2xl p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><PlugZap size={18} /></span>
+                <div>
+                  <b className="block text-sm text-[#111827]">Connect {connectCard.connector === "arena" ? "Arena.ai" : connectCard.connector === "appdeploy" ? "AppDeploy" : "Composio"}</b>
+                  <small className="text-xs text-[#6B7280]">{connectCard.reason}</small>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setConnectCard(null);
+                    if (connectCard.connector === "arena") useStore.getState().openBrowser("https://arena.ai", "arena");
+                    else navigate("/connections");
+                  }}
+                  className="flex-1 rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98]">
+                  {connectCard.connector === "arena" ? "Sign in now" : "Open Plugins"}
+                </button>
+                <button onClick={() => setConnectCard(null)}
+                  className="rounded-xl border border-[#E5E7EB] px-4 py-2.5 text-xs font-semibold text-[#374151]">
+                  Later
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="arc-composer-dock mx-auto w-full max-w-3xl px-4 pb-4 sm:px-8">
         {attachName && (
           <div className="mb-2 flex justify-center">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-400/10 px-3 py-1 text-[11.5px] text-violet-200">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-400/10 px-3 py-1 text-[11.5px] text-violet-600">
               <Paperclip size={11} />{attachName}
-              <button onClick={() => setAttachName(null)} aria-label="Remove attachment" className="text-slate-500 hover:text-white">×</button>
+              <button onClick={() => setAttachName(null)} aria-label="Remove attachment" className="text-[#6B7280] hover:text-[#111827]">×</button>
             </div>
           </div>
         )}
         {micMsg && (
-          <p className="mb-1.5 text-center text-[11.5px] text-amber-300/90" role="status">{micMsg}</p>
+          <p className="mb-1.5 text-center text-[11.5px] text-amber-600/90" role="status">{micMsg}</p>
         )}
-        <div className="arc-composer-pill flex items-end gap-1 rounded-full border border-white/[.11] bg-[#111531] p-1.5 shadow-2xl">
+        <div className="arc-composer-pill flex items-end gap-1 rounded-full border border-transparent bg-[#F3F4F6] p-1.5 shadow-sm">
           <button onClick={() => setSheetOpen(true)} aria-label="More options"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-white/[.07] hover:text-white active:scale-95">
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827] active:scale-95">
             <Plus size={19} />
           </button>
           <textarea ref={textRef} value={text} onChange={(e) => setText(e.target.value)} rows={1}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const v = text; setText(""); send(v); } }}
             placeholder="Ask anything. Make it real."
-            className="max-h-28 min-h-10 w-full resize-none bg-transparent px-1 py-2 text-[15px] leading-6 text-white outline-none placeholder:text-slate-600" />
+            className="max-h-28 min-h-10 w-full resize-none bg-transparent px-1 py-2 text-[15px] leading-6 text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
           {text.trim() ? (
             <button onClick={() => { const v = text; setText(""); send(v); }} disabled={thinking} aria-label="Send"
-              className="arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 text-[#10132f] disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 active:scale-95">
+              className="arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#007AFF] text-white disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 active:scale-95">
               <Send size={17} />
             </button>
           ) : (
             <button onClick={toggleMic} aria-label={listening ? "Stop dictation" : "Dictate"}
-              className={`arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full active:scale-95 ${listening ? "bg-rose-400/20 text-rose-300" : "text-slate-400 hover:bg-white/[.07] hover:text-white"}`}>
+              className={`arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full active:scale-95 ${listening ? "bg-rose-400/20 text-rose-600" : "text-[#4B5563] hover:bg-black/[.05] hover:text-[#111827]"}`}>
               <Mic size={18} />
             </button>
           )}
@@ -324,33 +375,33 @@ export default function ChatPage() {
       <AnimatePresence>
         {sheetOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSheetOpen(false)}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-[#020313]/70 backdrop-blur-sm">
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
             <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
               onClick={(e) => e.stopPropagation()} transition={{ type: "spring", damping: 28, stiffness: 300 }}
               className="arc-card w-full max-w-xl rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-3xl">
               <div className="mb-4 flex items-center justify-between">
-                <b className="text-sm font-semibold text-white">Composer options</b>
-                <button onClick={() => setSheetOpen(false)} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-white/[.07] hover:text-white"><X size={17} /></button>
+                <b className="text-sm font-semibold text-[#111827]">Composer options</b>
+                <button onClick={() => setSheetOpen(false)} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-black/[.05] hover:text-[#111827]"><X size={17} /></button>
               </div>
-              <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.2em] text-cyan-300/70">Response mode</p>
+              <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.2em] text-[#007AFF]/70">Response mode</p>
               <div className="mb-5 grid grid-cols-2 gap-2">
                 {([[false, "Fast", SlidersHorizontal, "Direct and quick"], [true, "Deep", Zap, "Thorough, more autonomous"]] as const).map(([isDeep, label, Icon, sub]) => (
                   <button key={label} onClick={() => { setDeep(isDeep); setMood(isDeep ? "high_autonomy" : "uncensored"); }}
-                    className={`rounded-2xl border p-3 text-left ${deep === isDeep ? "border-cyan-300/40 bg-cyan-300/10" : "border-white/[.09] hover:border-white/[.18]"}`}>
-                    <span className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-white"><Icon size={14} className={deep === isDeep ? "text-cyan-300" : "text-slate-500"} />{label}</span>
-                    <small className="block text-[11px] text-slate-500">{sub}</small>
+                    className={`rounded-2xl border p-3 text-left ${deep === isDeep ? "border-[#007AFF]/50 bg-[#007AFF]/10" : "border-[#E5E7EB] hover:hover:border-[#007AFF]/40"}`}>
+                    <span className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-[#111827]"><Icon size={14} className={deep === isDeep ? "text-[#007AFF]" : "text-[#6B7280]"} />{label}</span>
+                    <small className="block text-[11px] text-[#6B7280]">{sub}</small>
                   </button>
                 ))}
               </div>
               <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) attach(f); e.target.value = ""; setSheetOpen(false); }} />
               <button onClick={() => fileRef.current?.click()}
-                className="flex w-full items-center gap-3 rounded-2xl border border-white/[.09] p-3.5 text-left hover:border-white/[.18]">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/10 text-violet-200">
+                className="flex w-full items-center gap-3 rounded-2xl border border-[#E5E7EB] p-3.5 text-left hover:hover:border-[#007AFF]/40">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/10 text-violet-600">
                   {attaching ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
                 </span>
-                <span className="text-[13px] font-medium text-white">{attachName ? `Replace "${attachName}"` : "Attach a file"}</span>
+                <span className="text-[13px] font-medium text-[#111827]">{attachName ? `Replace "${attachName}"` : "Attach a file"}</span>
               </button>
-              <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-600"><Sparkles size={11} />Running on the live arena.ai session — full unrestricted access</p>
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-[#9CA3AF]"><Sparkles size={11} />Running on the live arena.ai session — full unrestricted access</p>
             </motion.div>
           </motion.div>
         )}
@@ -370,17 +421,17 @@ function MessageBubble({ m, isLast, thinking, steps, sources }: {
   if (m.role === "user") {
     return (
       <div className="mb-5 flex justify-end">
-        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-gradient-to-br from-cyan-300/90 to-violet-500/90 px-4 py-2.5 text-[14.5px] leading-relaxed font-medium text-[#10132f]">{m.content}</div>
+        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-[#007AFF] px-4 py-2.5 text-[14.5px] leading-relaxed font-medium text-white">{m.content}</div>
       </div>
     );
   }
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-2 pb-1.5 text-[11px] text-slate-600"><BrainCircuit size={12} />ARC{m.model ? ` · ${m.model}` : ""}</div>
-      <div className="whitespace-pre-wrap break-words text-[15px] leading-[1.65] text-slate-100">{m.content}</div>
+      <div className="flex items-center gap-2 pb-1.5 text-[11px] text-[#9CA3AF]"><BrainCircuit size={12} />ARC{m.model ? ` · ${m.model}` : ""}</div>
+      <div className="whitespace-pre-wrap break-words text-[15px] leading-[1.65] text-[#111827]">{m.content}</div>
       {hasThoughts && (
         <div className="mt-2.5">
-          <button onClick={() => setOpen(!open)} className="flex items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-slate-500 hover:text-white">
+          <button onClick={() => setOpen(!open)} className="flex items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[#6B7280] hover:text-[#111827]">
             {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             {steps.length > 0 ? steps[steps.length - 1].label : "Thinking"}
             {thinking && <Loader2 size={12} className="animate-spin" />}
@@ -389,29 +440,29 @@ function MessageBubble({ m, isLast, thinking, steps, sources }: {
             {open && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
                 <div className="arc-card mt-1.5 rounded-2xl p-4">
-                  <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.22em] text-cyan-300/70">Exploration progress</p>
+                  <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.22em] text-[#007AFF]/70">Exploration progress</p>
                   {steps.map((st) => (
                     <div key={st.id} className="flex items-start gap-2 py-1">
-                      {st.state === "ok" ? <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10"><Check size={12} strokeWidth={3} className="text-emerald-300" /></span>
-                        : st.state === "running" ? <Loader2 size={16} className="mt-0.5 shrink-0 animate-spin text-slate-500" />
+                      {st.state === "ok" ? <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10"><Check size={12} strokeWidth={3} className="text-emerald-600" /></span>
+                        : st.state === "running" ? <Loader2 size={16} className="mt-0.5 shrink-0 animate-spin text-[#6B7280]" />
                         : <span className="h-5 w-5 shrink-0 rounded-full border-2 border-rose-400/40" />}
-                      <div className="text-[13px] leading-snug text-slate-300">{st.label}{st.detail && <span className="text-slate-600"> — {st.detail.slice(0, 140)}</span>}</div>
+                      <div className="text-[13px] leading-snug text-[#374151]">{st.label}{st.detail && <span className="text-[#9CA3AF]"> — {st.detail.slice(0, 140)}</span>}</div>
                     </div>
                   ))}
                   {sources.length > 0 && (
                     <>
-                      <p className="arc-mono mb-1 mt-4 text-[10px] uppercase tracking-[.22em] text-cyan-300/70">Sources</p>
+                      <p className="arc-mono mb-1 mt-4 text-[10px] uppercase tracking-[.22em] text-[#007AFF]/70">Sources</p>
                       <div className="grid gap-1.5">
                         {sources.slice(0, 6).map((src, i) => (
-                          <a key={i} href={src.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl border border-white/[.07] bg-white/[.03] p-2.5 hover:border-cyan-300/30">
+                          <a key={i} href={src.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl border border-[#E5E7EB] bg-black/[.03] p-2.5 hover:border-[#007AFF]/40">
                             {src.logo ? <img src={src.logo} alt="" className="h-6 w-6 rounded-md" /> : <div className="arc-gradient h-6 w-6 rounded-md" />}
-                            <span className="min-w-0 flex-1"><b className="block truncate text-[12.5px] text-white">{src.title}</b><small className="text-[11px] text-slate-600">{src.domain}</small></span>
+                            <span className="min-w-0 flex-1"><b className="block truncate text-[12.5px] text-[#111827]">{src.title}</b><small className="text-[11px] text-[#9CA3AF]">{src.domain}</small></span>
                           </a>
                         ))}
                       </div>
                     </>
                   )}
-                  <Link href="/thoughts" className="mt-3 inline-block text-[12.5px] font-semibold text-cyan-300">Open full Thoughts →</Link>
+                  <Link href="/thoughts" className="mt-3 inline-block text-[12.5px] font-semibold text-[#007AFF]">Open full Thoughts →</Link>
                 </div>
               </motion.div>
             )}

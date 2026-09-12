@@ -55,7 +55,7 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
         <button
           type="button"
           onClick={resetError}
-          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
+          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm text-[#111827] hover:bg-gray-700"
         >
           Try again
         </button>

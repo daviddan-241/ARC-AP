@@ -12,6 +12,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 REACT_DIST = Path(__file__).resolve().parents[1] / "ui-react" / "dist"
+ROOT = Path(__file__).resolve().parents[1]
 SRC = Path(__file__).resolve().parents[1] / "ui-react" / "src"
 
 
@@ -41,11 +42,13 @@ def test_spa_serves_and_deep_links(client: TestClient) -> None:
 
 def test_design_tokens_present(client: TestClient) -> None:
     css = _app_css()
-    # ARC design tokens — the Replit arc-ai operator-layer design: deep navy
-    # surfaces (#080b25 sidebar, #111531 composer, #020313 backdrop) and the
-    # cyan -> violet -> magenta gradient off the ARC wordmark.
-    for token in ("#080b25", "#111531", "#020313", "#45cef7", "#ab50f2", "#eb52ab"):
+    # ARC design tokens — v13 light consumer contract: pure-white/near-white
+    # surfaces, #007AFF iOS accent, #E5E7EB borders, #111827/#6B7280 text.
+    # The dark navy surfaces (#080b25/#111531/#020313) must be GONE.
+    for token in ("#007aff", "#e5e7eb"):
         assert token in css.lower(), f"missing design token {token}"
+    for dark in ("#080b25", "#111531", "#020313"):
+        assert dark not in css.lower(), f"dark-era token {dark} still present in built CSS"
     # the arc-* design-system classes must survive the build
     for cls in (".arc-card", ".arc-gradient", ".arc-mono", ".arc-composer-pill", ".arc-shell"):
         assert cls in css, f"missing design-system class {cls}"
@@ -62,7 +65,7 @@ def test_pwa_manifest_served(client: TestClient) -> None:
     r = client.get("/manifest.json")
     assert r.status_code == 200
     assert "ARC" in r.text  # rebranded: ARC wordmark
-    assert '"name": "ARC"' in r.text and '"#0A0D24"' in r.text
+    assert '"name": "ARC"' in r.text and '"#FFFFFF"' in r.text  # v13: light PWA chrome
 
 
 def test_no_sub_16px_font_size_in_source_inputs() -> None:
@@ -116,14 +119,13 @@ def test_jump_to_bottom_button_is_actually_rendered() -> None:
 
 
 def test_connections_page_collapses_extra_integrations() -> None:
-    """Only the 3 core connections (arena.ai, agent email, browser) show by
-    default; AppDeploy/Composio and anything added later stay behind a
-    'Show more' toggle so this page can't turn into a wall of cards."""
+    """v13 plugins layout (supersedes the old Show-more collapse): Installed
+    shows ONLY live verified tiles; Popular rows must carry a real action —
+    Composio dashboard route, AppDeploy provisioning, or the honest locked
+    state that opens the real key sheet. No decorative connector cards."""
     src = (SRC / "pages" / "PluginsPage.tsx").read_text()
-    assert "const core: Conn[]" in src
-    assert "const extra: Conn[]" in src
-    assert "showMore" in src
-    assert "Show more" in src or "more integrations" in src
+    assert ".filter((a) => a.connected)" in src  # Installed = live tiles only
+    assert "filtered" in src and "Search plugins" in src
 
 
 def test_settings_has_no_fake_appearance_toggle() -> None:
@@ -161,15 +163,14 @@ def test_auth_gate_uses_dynamic_viewport_height_not_raw_dvh() -> None:
 
 
 def test_sidebar_matches_reference_nav_structure() -> None:
-    """Nav order matches the reference: Library / Projects / Plugins always
-    visible, everything else behind More; Recents (real chat history) sits
-    below the nav, not above it; New chat + profile are pinned at the
-    bottom of the sidebar."""
+    """v13 IA: max 3 primary destinations (Chat + Library + Plugins),
+    Projects hidden while empty, More collapsible, New chat pinned top,
+    real Log out pinned bottom, Recents only when real chats exist."""
     src = (SRC / "App.tsx").read_text()
     assert '{ href: "/library", label: "Library"' in src
-    assert '{ href: "/projects", label: "Projects"' in src
     assert '{ href: "/connections", label: "Plugins"' in src
-    assert "SidebarFooter" in src and "New chat" in src
+    assert "(projectCount ?? 0) > 0" in src
+    assert "New chat" in src and "Log out" in src
 
 
 def test_projects_page_is_real_crud_not_mock() -> None:
@@ -202,3 +203,98 @@ def test_logout_actually_resets_the_auth_gate() -> None:
     when authed becomes TRUE. Must also handle the reverse transition."""
     src = (SRC / "components" / "AuthGate.tsx").read_text()
     assert 'if (!authed && phase === "ready") setPhase("password")' in src
+
+def test_light_mode_token_contract() -> None:
+    """v13: :root tokens must be the light consumer palette — near-white
+    background, dark foreground, #007AFF-style primary (211 100% 50%),
+    light gray borders. The old dark :root values must be gone."""
+    css = (SRC / "index.css").read_text()
+    assert "--background: 210 20% 98%" in css
+    assert "--foreground: 217 19% 15%" in css
+    assert "--primary: 211 100% 50%" in css
+    assert "--border: 216 13% 91%" in css
+    assert "radial-gradient(circle at 78% -12%" not in css  # heavy dark gradients removed
+
+
+def test_sidebar_primary_nav_max_three_visible() -> None:
+    """IA contract: max 3 primary destinations (Chat + Library + Plugins),
+    everything else behind the collapsible More; Projects hidden while
+    empty; New Chat pinned at the top; Log out present at the bottom."""
+    src = (SRC / "App.tsx").read_text()
+    assert '{ href: "/library", label: "Library"' in src
+    assert '{ href: "/connections", label: "Plugins"' in src
+    assert "PRIMARY_NAV" in src and "MORE_NAV" in src
+    # Projects only renders after a real non-zero project count loads
+    assert "(projectCount ?? 0) > 0" in src
+    assert "New chat" in src and "Log out" in src
+
+
+def test_recents_hidden_when_no_real_chats() -> None:
+    """No empty-state noise: ChatHistory renders NOTHING when the backend
+    has zero real conversations."""
+    src = (SRC / "components" / "ChatHistory.tsx").read_text()
+    assert "items.length === 0) return null" in src.replace("!", "")
+    assert "No chats yet" not in src
+
+
+def test_plugins_page_installed_and_popular_sections() -> None:
+    """ChatGPT-style plugins layout: search bar, Installed row (live tiles
+    only), Popular list with real actions — Composio key sheet, AppDeploy
+    provisioning, no fake connector rows."""
+    src = (SRC / "pages" / "PluginsPage.tsx").read_text()
+    assert "Search plugins" in src
+    assert "Installed" in src and "Popular" in src
+    assert "dashboard.composio.dev" in src
+    assert "api.provisionAppDeploy" in src
+    assert "api.putVault" in src  # key save is real
+
+
+def test_settings_rows_are_real_backed() -> None:
+    """Settings sections must have real backing: Notification API, real
+    speechSynthesis read-aloud (consumed by ChatPage), real PIN save, real
+    delete-all-chats loop, real logout, real repo links. And NO Appearance/
+    Subscription rows — no fake buttons on this platform."""
+    src = (SRC / "pages" / "SettingsPage.tsx").read_text()
+    assert "Notification.requestPermission" in src
+    assert "speechSynthesis" in src
+    assert "api.deleteConversation" in src
+    assert "api.logout()" in src
+    assert "Appearance" not in src
+    assert "Subscription" not in src
+
+
+def test_read_aloud_setting_consumed_by_chat() -> None:
+    """The Voice toggle must DO something: ChatPage reads finished answers
+    aloud via speechSynthesis when the operator enabled it."""
+    src = (SRC / "pages" / "ChatPage.tsx").read_text()
+    assert 'localStorage.getItem("arcReadAloud") === "1"' in src
+    assert "SpeechSynthesisUtterance" in src
+
+
+def test_connect_required_event_end_to_end() -> None:
+    """Backend glue: a tool failure from a missing connector emits the
+    structured connect_required SSE event; the frontend type union knows
+    it and ChatPage auto-surfaces the connect card."""
+    chat = (ROOT / "arenaos" / "api" / "routers" / "chat.py").read_text()
+    assert '"kind": "connect_required"' in chat
+    assert '"connector": "composio"' in chat
+    api_ts = (SRC / "lib" / "api.ts").read_text()
+    assert 'kind: "connect_required"' in api_ts
+    page = (SRC / "pages" / "ChatPage.tsx").read_text()
+    assert "connectCard" in page and "Open Plugins" in page
+
+
+def test_email_tools_human_like_timing() -> None:
+    """Anti-flagging contract: the webmail session must use jittered
+    human-like pauses (never fixed robotic intervals) and the browser
+    contexts must launch with a realistic Chrome user-agent (never the
+    default HeadlessChrome UA that bot detection keys on)."""
+    wm = (ROOT / "arenaos" / "email" / "webmail.py").read_text()
+    assert "async def human_pause" in wm
+    assert "random" in wm
+    # no fixed interaction sleeps left (only the honest poll interval)
+    assert "await asyncio.sleep(1.5)" not in wm
+    for mod in ("arenaos/browser/session.py", "arenaos/arena/web_provider.py"):
+        src = (ROOT / mod).read_text()
+        assert "user_agent=" in src, f"{mod} must set a realistic UA"
+        assert "HeadlessChrome/" not in src  # the flagging UA signature itself

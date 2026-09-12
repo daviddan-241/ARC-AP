@@ -1,116 +1,170 @@
 import { useEffect, useState } from "react";
-import { Globe, KeyRound, Loader2, LockKeyhole, Mail, RotateCcw } from "lucide-react";
-import { api, sha256Hex } from "../lib/api";
+import { Bell, ChevronRight, FileQuestion, Globe, Info, KeyRound, Loader2, LockKeyhole, LogOut, Mail, Megaphone, RotateCcw, Trash2, Volume2 } from "lucide-react";
+import { api } from "../lib/api";
 import { useStore } from "../lib/store";
-import PageHeader from "../components/PageHeader";
 
-/** Settings — real state and real actions: the arena.ai session (live status +
- * sign-in workspace), the agent email, the PIN lock, and the platform status. */
+type Status = { transport?: string; engine_ready?: boolean; arena_session_status?: { status?: string; detail?: string } };
+
+const VOICE_KEY = "arcReadAloud";
+const NOTIFY_KEY = "arcNotifications";
+
+/** Settings — every row is real: live session status, browser notification
+ * permission (real Notification API), read-aloud (real speechSynthesis,
+ * consumed by ChatPage), the 4-digit PIN (real, hashed server-side),
+ * storage usage + reset (real), delete-all-chats (real API loop), issue
+ * reporting to the real GitHub repo, and a red log-out that calls the real
+ * endpoint. Sections ChatGPT has that this platform has NO backing for
+ * (parental controls, trusted contact) are simply not listed — a row that
+ * does nothing is a fake row. */
 export default function SettingsPage() {
   const openBrowser = useStore((s) => s.openBrowser);
-  const [status, setStatus] = useState<{ transport?: string; engine_ready?: boolean; arena_session_status?: { status?: string; detail?: string } } | null>(null);
+  const setAuthed = useStore((s) => s.setAuthed);
+  const [status, setStatus] = useState<Status | null>(null);
   const [pin, setPin] = useState("");
   const [pinMsg, setPinMsg] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pinBusy, setPinBusy] = useState(false);
+  const [readAloud, setReadAloud] = useState(() => localStorage.getItem(VOICE_KEY) === "1");
+  const [notify, setNotify] = useState(() => localStorage.getItem(NOTIFY_KEY) === "1" && typeof Notification !== "undefined" && Notification.permission === "granted");
+  const [storageKb, setStorageKb] = useState<number | null>(null);
+  const [purging, setPurging] = useState(false);
+  const [purgeMsg, setPurgeMsg] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => { api.status().then(setStatus).catch(() => null); }, []);
+  useEffect(() => {
+    api.status().then(setStatus).catch(() => null);
+    let kb = 0;
+    try { kb = JSON.stringify(localStorage).length / 1024; } catch { /* private mode */ }
+    setStorageKb(Math.round(kb));
+  }, []);
+
+  const toggleReadAloud = () => {
+    const next = !readAloud;
+    setReadAloud(next);
+    localStorage.setItem(VOICE_KEY, next ? "1" : "0");
+    if (!next && typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+  };
+
+  const toggleNotifications = async () => {
+    if (typeof Notification === "undefined") return;
+    if (!notify && Notification.permission !== "granted") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") return;
+    }
+    const next = !notify;
+    setNotify(next);
+    localStorage.setItem(NOTIFY_KEY, next ? "1" : "0");
+  };
 
   const savePin = async () => {
     if (!/^\d{4}$/.test(pin)) { setPinMsg("Enter a 4-digit PIN."); return; }
-    setBusy(true); setPinMsg("");
+    setPinBusy(true); setPinMsg("");
     try {
+      const { sha256Hex } = await import("../lib/api");
       await api.putSetting("pin_hash", await sha256Hex(pin));
       const st = await api.settings();
       if ((st as Record<string, string>).pin_hash) { setPinMsg("PIN saved — it unlocks on next cold open."); setPin(""); }
       else setPinMsg("The server didn't store that — try again.");
-    } catch { setPinMsg("Failed — try again."); } finally { setBusy(false); }
+    } catch { setPinMsg("Failed — try again."); } finally { setPinBusy(false); }
+  };
+
+  const purgeChats = async () => {
+    setPurging(true); setPurgeMsg("");
+    try {
+      const list = await api.listConversations();
+      await Promise.all(list.map((c) => api.deleteConversation(c.id)));
+      setPurgeMsg(`Deleted ${list.length} conversation${list.length === 1 ? "" : "s"} for real.`);
+    } catch { setPurgeMsg("Couldn't delete — check your connection and retry."); }
+    finally { setPurging(false); }
+  };
+
+  const logOut = async () => {
+    setLoggingOut(true);
+    try { await api.logout(); } catch { /* cookie may already be gone */ }
+    setAuthed(false);
   };
 
   const arena = status?.arena_session_status ?? {};
-  const arenaChip = arena.status === "ready" ? "text-emerald-300" : arena.status === "login_required" || arena.status === "captcha_required" ? "text-amber-300" : "text-slate-400";
+  const arenaChip = arena.status === "ready" ? "text-emerald-600" : arena.status === "login_required" || arena.status === "captcha_required" ? "text-amber-600" : "text-[#9CA3AF]";
+
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section className="mb-7">
+      <h2 className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[.14em] text-[#9CA3AF]">{title}</h2>
+      <div className="arc-card overflow-hidden rounded-2xl">{children}</div>
+    </section>
+  );
+  const Row = ({ icon: I, label, sub, right, onClick }: {
+    icon: typeof Globe; label: string; sub?: string; right?: React.ReactNode; onClick?: () => void;
+  }) => (
+    <div onClick={onClick}
+      className={`flex items-center gap-3.5 border-b border-[#E5E7EB] p-4 last:border-b-0 ${onClick ? "cursor-pointer hover:bg-black/[.02]" : ""}`}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black/[.04] text-[#4B5563]"><I size={16} /></span>
+      <span className="min-w-0 flex-1"><b className="block text-[13.5px] text-[#111827]">{label}</b>{sub && <small className="mt-0.5 block text-xs text-[#6B7280]">{sub}</small>}</span>
+      {right}
+    </div>
+  );
+  const Toggle = ({ on }: { on: boolean }) => (
+    <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-[#007AFF]" : "bg-[#D1D5DB]"}`}>
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? "left-[18px]" : "left-0.5"}`} />
+    </span>
+  );
 
   return (
-    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
-      <PageHeader eyebrow="Control room / 07" title="Settings" description="Tune the operator layer and keep the real sessions healthy." />
+    <div className="arc-page-scroll mx-auto h-full max-w-2xl overflow-y-auto px-4 py-8 pb-24 sm:px-8">
+      <h1 className="text-2xl font-bold tracking-tight text-[#111827]">Settings</h1>
 
-      <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
-        <section className="space-y-5">
-          {/* arena.ai — the model session, with a real sign-in path */}
-          <div className="arc-card rounded-3xl p-5 sm:p-6">
-            <div className="mb-4 flex items-start gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><Globe size={18} /></span>
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-white">arena.ai session</h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">ARC thinks through this logged-in web session. Sign in once — the server keeps the cookies.</p>
-              </div>
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${arenaChip}`}>{arena.status ?? "…"}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => openBrowser("https://arena.ai", "arena")}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-cyan-300 to-violet-500 px-4 py-2.5 text-xs font-bold text-[#10132f] active:scale-[.98]">
-                <Globe size={14} />Open Arena sign-in
-              </button>
-            </div>
-            {arena.detail && <p className="mt-3 text-[11.5px] leading-5 text-slate-600">{String(arena.detail).slice(0, 200)}</p>}
-          </div>
+      <div className="mt-6">
+        <Section title="Apps">
+          <Row icon={Globe} label="Arena.ai" sub={arena.detail?.slice(0, 90) || "The model session ARC thinks through."}
+            onClick={() => openBrowser("https://arena.ai", "arena")}
+            right={<span className="flex shrink-0 items-center gap-2"><b className={`text-[11px] font-bold uppercase tracking-wide ${arenaChip}`}>{arena.status ?? "…"}</b><ChevronRight size={15} className="text-[#9CA3AF]" /></span>} />
+          <Row icon={Mail} label="Agent email" sub="The agent's own inbox — codes and links get read from here."
+            onClick={() => openBrowser("https://mail.google.com", "webmail")}
+            right={<ChevronRight size={15} className="text-[#9CA3AF]" />} />
+        </Section>
 
-          {/* the agent's own email */}
-          <div className="arc-card rounded-3xl p-5 sm:p-6">
-            <div className="mb-4 flex items-start gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-400/10 text-violet-200"><Mail size={18} /></span>
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-white">Agent email</h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">The agent's own inbox — it reads sign-in codes and taps links from here automatically.</p>
-              </div>
-            </div>
-            <button onClick={() => openBrowser("https://mail.google.com", "webmail")}
-              className="flex items-center gap-2 rounded-xl border border-white/[.1] px-4 py-2.5 text-xs font-bold text-white hover:bg-white/[.08]">
-              <Mail size={14} />Open the agent's mail
+        <Section title="General">
+          <Row icon={Bell} label="Notifications" sub={notify ? "On — browser notifications allowed." : typeof Notification === "undefined" ? "Not supported in this browser." : "Off — allow browser notifications."}
+            onClick={typeof Notification !== "undefined" ? toggleNotifications : undefined}
+            right={<Toggle on={notify} />} />
+          <Row icon={Volume2} label="Voice" sub={readAloud ? "On — answers are read aloud after each turn." : "Off — answers stay silent."}
+            onClick={toggleReadAloud} right={<Toggle on={readAloud} />} />
+        </Section>
+
+        <Section title="Security and login">
+          <Row icon={LockKeyhole} label="PIN lock" sub="A 4-digit PIN unlocks the app after your operator password. Stored hashed server-side." />
+          <div className="flex items-center gap-2 border-b border-[#E5E7EB] bg-black/[.015] p-4">
+            <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="••••"
+              className="w-28 rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-center text-lg font-bold tracking-[.4em] text-[#111827] outline-none focus:border-[#007AFF]/50" />
+            <button onClick={savePin} disabled={pinBusy}
+              className="flex items-center gap-2 rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">
+              {pinBusy ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}Save PIN
             </button>
+            {pinMsg && <small className="text-xs text-[#007AFF]">{pinMsg}</small>}
           </div>
+          <Row icon={LogOut} label="Log out" sub="Ends this session on the server and re-locks the app."
+            onClick={logOut}
+            right={loggingOut ? <Loader2 size={15} className="animate-spin text-rose-600" /> : <b className="text-[13px] font-semibold text-rose-600">Log out</b>} />
+        </Section>
 
-          {/* PIN lock — real, stored server-side */}
-          <div className="arc-card rounded-3xl p-5 sm:p-6">
-            <div className="mb-4 flex items-start gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-200"><KeyRound size={18} /></span>
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-white">PIN lock</h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">A 4-digit PIN unlocks the app after your operator password. Stored hashed on the server.</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="••••"
-                className="w-28 rounded-xl border border-white/[.09] bg-white/[.035] px-3 py-2.5 text-center text-lg font-bold tracking-[.4em] text-white outline-none focus:border-cyan-300/40" />
-              <button onClick={savePin} disabled={busy}
-                className="flex items-center gap-2 rounded-xl border border-white/[.1] px-4 py-2.5 text-xs font-bold text-white hover:bg-white/[.08] disabled:opacity-40">
-                {busy ? <Loader2 size={14} className="animate-spin" /> : <LockKeyhole size={14} />}Save PIN
-              </button>
-            </div>
-            {pinMsg && <p className="mt-2 text-xs text-cyan-300">{pinMsg}</p>}
-          </div>
-        </section>
+        <Section title="Storage and data">
+          <Row icon={RotateCcw} label="Reset local session" sub={`Clears cached state on this device (${storageKb ?? 0} KB). Server data is untouched.`}
+            onClick={() => { localStorage.clear(); sessionStorage.clear(); location.reload(); }}
+            right={<ChevronRight size={15} className="text-[#9CA3AF]" />} />
+          <Row icon={Trash2} label="Delete all chats" sub="Really deletes every conversation from the server — permanent."
+            onClick={purging ? undefined : purgeChats}
+            right={purging ? <Loader2 size={15} className="animate-spin text-rose-600" /> : <b className="text-[13px] font-semibold text-rose-600">Delete</b>} />
+          {purgeMsg && <small className="block bg-black/[.015] p-3 text-xs text-[#007AFF]">{purgeMsg}</small>}
+        </Section>
 
-        <section className="space-y-5">
-          {/* platform status — real backend values */}
-          <div className="arc-card rounded-3xl p-5">
-            <h2 className="mb-4 text-sm font-semibold text-white">Platform</h2>
-            <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between"><span className="text-slate-500">Transport</span><b className="text-white">{status?.transport ?? "…"}</b></div>
-              <div className="flex justify-between"><span className="text-slate-500">Task engine</span><b className={status?.engine_ready ? "text-emerald-300" : "text-amber-300"}>{status?.engine_ready ? "ready" : "…"}</b></div>
-              <div className="flex justify-between"><span className="text-slate-500">Arena session</span><b className="text-white">{arena.status ?? "…"}</b></div>
-            </div>
-          </div>
-
-          {/* reset local state */}
-          <div className="arc-card rounded-3xl p-5">
-            <h2 className="mb-4 text-sm font-semibold text-white">Session</h2>
-            <button onClick={() => { localStorage.clear(); sessionStorage.clear(); location.reload(); }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[.1] py-2.5 text-xs font-bold text-slate-300 hover:bg-white/[.08]">
-              <RotateCcw size={14} />Reset local session
-            </button>
-            <p className="mt-2 text-[11px] leading-4 text-slate-600">Clears cached chat state on this device and re-locks the app. Server data is untouched.</p>
-          </div>
-        </section>
+        <Section title="Get help">
+          <Row icon={Megaphone} label="Report app issue" sub="Opens a pre-filled issue on the ARC-AP repo."
+            onClick={() => { window.open("https://github.com/daviddan-241/ARC-AP/issues/new?title=App%20issue%3A%20", "_blank"); }}
+            right={<ChevronRight size={15} className="text-[#9CA3AF]" />} />
+          <Row icon={FileQuestion} label="Help center" sub="Readme and docs in the repo."
+            onClick={() => { window.open("https://github.com/daviddan-241/ARC-AP", "_blank"); }}
+            right={<ChevronRight size={15} className="text-[#9CA3AF]" />} />
+          <Row icon={Info} label="About" sub={`ARC — ArenaOS operator layer. Transport: ${status?.transport ?? "…"}. Engine: ${status?.engine_ready ? "ready" : "…"}.`} />
+        </Section>
       </div>
     </div>
   );

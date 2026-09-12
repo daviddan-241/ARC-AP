@@ -178,6 +178,22 @@ async def send_message(conversation_id: str, body: MessageBody,
                                  "ok": step.result.get("ok"),
                                  "output": out,
                                  "error": step.result.get("error", "")})
+                # Structured "connect required" event: when a tool genuinely
+                # fails because its connector/key isn't set up, tell the
+                # frontend so it can auto-surface the right connect card —
+                # exactly like ChatGPT's plugin sign-in popups. Honest by
+                # construction: it only fires on a REAL failed tool_result.
+                err = str(step.result.get("error", ""))
+                if not step.result.get("ok") and err:
+                    if "composio" in err.lower() or "dashboard.composio.dev" in err:
+                        await queue.put({"kind": "connect_required", "connector": "composio",
+                                         "reason": "A task needs Composio, but its API key isn't stored yet."})
+                    elif "appdeploy" in err.lower():
+                        await queue.put({"kind": "connect_required", "connector": "appdeploy",
+                                         "reason": "A task needs AppDeploy, but the free key isn't provisioned yet."})
+                    elif "arena" in err.lower() and ("login" in err.lower() or "session" in err.lower()):
+                        await queue.put({"kind": "connect_required", "connector": "arena",
+                                         "reason": "The arena.ai session needs your sign-in."})
 
         async def produce() -> None:
             try:

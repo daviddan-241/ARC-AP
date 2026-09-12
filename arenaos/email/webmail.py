@@ -11,6 +11,16 @@ import logging
 import re
 from typing import Awaitable, Callable, Optional
 
+import random as _random
+
+
+async def human_pause(lo: float, hi: float) -> None:
+    """Jittered human-like pause — fixed robotic intervals are a classic
+    bot fingerprint. Every webmail action waits a slightly different,
+    naturally noisy amount."""
+    await asyncio.sleep(_random.uniform(lo, hi))
+
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_WEBMAIL_URL = "https://mail.google.com/mail/u/0/#inbox"
@@ -148,7 +158,7 @@ class WebmailSession:
         try:
             await page.wait_for_load_state("networkidle", timeout=6000)
         except Exception:
-            await asyncio.sleep(1.5)  # webapps that never go idle still settle
+            await human_pause(1.1, 2.1)  # webapps that never go idle still settle
 
         # Open the newest unread thread when one exists — the code lives there.
         for sel in UNREAD_SELECTORS:
@@ -156,7 +166,7 @@ class WebmailSession:
                 el = page.locator(sel).first
                 if await el.count() and await el.is_visible():
                     await el.click(timeout=3000)
-                    await asyncio.sleep(1.2)
+                    await human_pause(0.8, 1.6)
                     break
             except Exception:
                 continue
@@ -227,7 +237,7 @@ class WebmailSession:
             await target.click(timeout=5000)
         except Exception:
             await page.evaluate("(el) => el.click()", await target.element_handle())
-        await asyncio.sleep(2.5)
+        await human_pause(1.8, 3.2)
 
         # follow either same-tab navigation or a newly opened tab
         landing = None
@@ -250,7 +260,7 @@ class WebmailSession:
         try:
             await page.wait_for_load_state("networkidle", timeout=6000)
         except Exception:
-            await asyncio.sleep(1.5)
+            await human_pause(1.1, 2.0)
 
         compose = None
         for sel in COMPOSE_BUTTON_SELECTORS:
@@ -263,31 +273,31 @@ class WebmailSession:
                 "Compose button not found — is the agent's webmail logged in?"
             )
         await compose.click()
-        await asyncio.sleep(1.5)
+        await human_pause(1.1, 2.0)
 
         to_field = await self._first(page, TO_FIELD_SELECTORS)
         if to_field is None:
             raise RuntimeError("Compose 'To' field not found in the webmail UI.")
         await to_field.fill(to)
         await to_field.press("Tab")
-        await asyncio.sleep(0.4)
+        await human_pause(0.25, 0.6)
 
         subj = await self._first(page, SUBJECT_FIELD_SELECTORS)
         if subj:
             await subj.fill(subject)
-        await asyncio.sleep(0.3)
+        await human_pause(0.18, 0.45)
 
         body_field = await self._first(page, BODY_FIELD_SELECTORS)
         if body_field is None:
             raise RuntimeError("Compose body field not found in the webmail UI.")
         await body_field.fill(body)
-        await asyncio.sleep(0.3)
+        await human_pause(0.18, 0.45)
 
         send = await self._first(page, SEND_BUTTON_SELECTORS)
         if send is None:
             raise RuntimeError("Send button not found in the compose window.")
         await send.click()
-        await asyncio.sleep(2.0)
+        await human_pause(1.4, 2.6)
         return f"sent to {to}: {subject!r}"
 
     async def _first(self, page, selectors):

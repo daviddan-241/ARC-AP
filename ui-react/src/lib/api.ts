@@ -16,6 +16,7 @@ export type SSEEvent =
   | { kind: "tool_call"; tool: string; args?: Record<string, unknown> }
   | { kind: "tool_result"; ok: boolean; output?: string; error?: string }
   | { kind: "learned"; key?: string; content: string }
+  | { kind: "connect_required"; connector: string; reason: string }
   | { kind: "done"; model?: string }
   | { kind: "error"; error: string };
 

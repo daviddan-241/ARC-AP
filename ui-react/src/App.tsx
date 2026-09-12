@@ -2,17 +2,17 @@ import { ReactNode, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AtSign, BrainCircuit, ChevronDown, ChevronRight, FolderKanban, Globe2, LibraryBig, LockKeyhole,
-  Menu, MessageSquarePlus, MoreHorizontal, Settings2, Workflow, WandSparkles, X,
+  LogOut, Menu, MessageSquarePlus, MoreHorizontal, Settings2, Workflow, WandSparkles, X,
 } from "lucide-react";
 import { Link, Route, Switch, useLocation } from "wouter";
 import { useViewportHeight } from "./lib/useViewportHeight";
+import { api } from "./lib/api";
 import { useStore } from "./lib/store";
 import AuthGate from "./components/AuthGate";
 import ArenaLoginGate from "./components/ArenaLoginGate";
 import BrowserOverlay from "./components/BrowserOverlay";
 import BrandMark from "./components/BrandMark";
 import ChatHistory from "./components/ChatHistory";
-import ProfileSheet from "./components/ProfileSheet";
 import ChatPage from "./pages/ChatPage";
 import ThoughtsPage from "./pages/ThoughtsPage";
 import SkillsPage from "./pages/SkillsPage";
@@ -23,13 +23,12 @@ import PluginsPage from "./pages/PluginsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BrowserPage from "./pages/BrowserPage";
 
-// Sidebar top nav — matches the ChatGPT reference layout Danny pointed at:
-// Library / Projects / Plugins always visible, everything else behind
-// "More" (Automations/Skills/Thoughts/Browser/Private chat/Settings) so the
-// command center never turns into a wall of nav items.
+/* Information architecture per the light-mode spec: max 3 primary
+ * destinations visible at once (Chat is the main surface; Library + Plugins
+ * in the sidebar), Projects hidden completely while empty, everything else
+ * behind a collapsible "More", Recents only when real chats exist. */
 const PRIMARY_NAV = [
   { href: "/library", label: "Library", icon: LibraryBig },
-  { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/connections", label: "Plugins", icon: AtSign },
 ];
 const MORE_NAV = [
@@ -38,12 +37,11 @@ const MORE_NAV = [
   { href: "/thoughts", label: "Thoughts", icon: BrainCircuit },
   { href: "/browser", label: "Browser", icon: Globe2 },
   { href: "/private", label: "Private chat", icon: LockKeyhole },
-  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 function IconButton({ label, children, onClick }: { label: string; children: ReactNode; onClick?: () => void }) {
   return <button type="button" aria-label={label} title={label} onClick={onClick}
-    className="arc-transition inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white active:scale-95">{children}</button>;
+    className="arc-transition inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-black/[.05] hover:text-[#111827] active:scale-95">{children}</button>;
 }
 
 function NavLink({ href, label, icon: I, active, onClick }: {
@@ -51,29 +49,73 @@ function NavLink({ href, label, icon: I, active, onClick }: {
 }) {
   return (
     <Link href={href} onClick={onClick}
-      className={`arc-transition flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active ? "bg-white/[.1] text-white shadow-[inset_2px_0_0_hsl(194_92%_62%)]" : "text-slate-400 hover:bg-white/[.05] hover:text-white"}`}>
+      className={`arc-transition flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active ? "bg-[#007AFF]/[.08] font-semibold text-[#007AFF]" : "text-[#374151] hover:bg-black/[.04] hover:text-[#111827]"}`}>
       <I size={17} strokeWidth={1.8} /><span>{label}</span>
     </Link>
   );
 }
 
-/** Shared between the desktop aside and the mobile drawer so both stay in
- * sync: nav on top (Library/Projects/Plugins/More), "Recents" below it —
- * exactly the reference order (nav first, then Recents), not the other
- * way around like the old sidebar had it. */
-function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: () => void }) {
+/** New Chat action — starts a genuinely fresh conversation (real store
+ * reset + route change), pinned at the very top of the sidebar like the
+ * reference. */
+function NewChatButton({ onNavigate }: { onNavigate?: () => void }) {
+  const [, navigate] = useLocation();
+  const setConversation = useStore((s) => s.setConversation);
+  const resetChat = useStore((s) => s.resetChat);
+  return (
+    <button onClick={() => { setConversation(null); resetChat(); navigate("/chat"); onNavigate?.(); }}
+      className="mb-4 flex w-full items-center gap-3 rounded-2xl bg-[#007AFF] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#007AFF]/25 active:scale-[.98]">
+      <MessageSquarePlus size={17} />New chat
+    </button>
+  );
+}
+
+/** Real log-out: calls the live /api/auth/logout first, then clears client
+ * auth state (AuthGate listens and re-locks the app). */
+function LogoutButton({ onDone }: { onDone?: () => void }) {
+  const setAuthed = useStore((s) => s.setAuthed);
+  const [busy, setBusy] = useState(false);
+  return (
+    <button onClick={async () => {
+      setBusy(true);
+      try { await api.logout(); } catch { /* cookie may already be gone */ }
+      setAuthed(false);
+      onDone?.();
+    }} disabled={busy}
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-500/[.06] disabled:opacity-50">
+      <LogOut size={17} strokeWidth={1.8} />{busy ? "Logging out…" : "Log out"}
+    </button>
+  );
+}
+
+/** Shared sidebar body — desktop aside and mobile drawer render the exact
+ * same list so the two never drift apart. */
+function SidebarBody({ location, onNavigate, onLogOut }: {
+  location: string; onNavigate?: () => void; onLogOut?: () => void;
+}) {
   const [moreOpen, setMoreOpen] = useState(() => localStorage.getItem("arcNavMoreOpen") === "1");
-  useEffect(() => { localStorage.setItem("arcNavMoreOpen", moreOpen ? "1" : "0"); }, [moreOpen]);
+  const [projectCount, setProjectCount] = useState<number | null>(null);
+  useEffect(() => {
+    localStorage.setItem("arcNavMoreOpen", moreOpen ? "1" : "0");
+  }, [moreOpen]);
+  // Real project count — Projects stays completely hidden while it's 0.
+  useEffect(() => {
+    api.projects().then((p) => setProjectCount(p.length)).catch(() => setProjectCount(null));
+  }, []);
 
   return (
     <>
+      <NewChatButton onNavigate={onNavigate} />
       <nav className="space-y-1">
+        <NavLink href="/chat" label="Chat" icon={MessageSquarePlus} active={location === "/chat"} onClick={onNavigate} />
         {PRIMARY_NAV.map((item) => <NavLink key={item.href} {...item} active={location === item.href} onClick={onNavigate} />)}
+        {(projectCount ?? 0) > 0 && (
+          <NavLink href="/projects" label="Projects" icon={FolderKanban} active={location === "/projects"} onClick={onNavigate} />
+        )}
       </nav>
       <button onClick={() => setMoreOpen((v) => !v)}
-        className="arc-transition mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-500 hover:bg-white/[.05] hover:text-white">
-        <MoreHorizontal size={17} strokeWidth={1.8} />
-        <span>More</span>
+        className="arc-transition mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[#6B7280] hover:bg-black/[.04] hover:text-[#111827]">
+        <MoreHorizontal size={17} strokeWidth={1.8} /><span>More</span>
         {moreOpen ? <ChevronDown size={15} className="ml-auto" /> : <ChevronRight size={15} className="ml-auto" />}
       </button>
       <AnimatePresence initial={false}>
@@ -81,98 +123,69 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
           <motion.nav initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }} className="space-y-1 overflow-hidden">
             {MORE_NAV.map((item) => <NavLink key={item.href} {...item} active={location === item.href} onClick={onNavigate} />)}
+            <NavLink href="/settings" label="Settings" icon={Settings2} active={location === "/settings"} onClick={onNavigate} />
           </motion.nav>
         )}
       </AnimatePresence>
-      <p className="arc-mono mb-1 mt-6 px-1 text-[10px] uppercase tracking-[.22em] text-slate-600">Chats</p>
+      {/* Recents: REAL conversations only — the section hides entirely when
+          the backend has none (no empty-state noise). */}
       <ChatHistory onNavigate={onNavigate} />
+      <div className="mt-auto" />
+      <div className="mt-6 border-t border-[#E5E7EB] pt-3">
+        <div className="mb-2 flex items-center gap-3 px-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-[11px] font-bold text-white">DO</span>
+          <span><b className="block text-[13px] font-semibold text-[#111827]">Danny Op</b><small className="text-[11px] text-[#9CA3AF]">Operator</small></span>
+        </div>
+        <LogoutButton onDone={onLogOut} />
+      </div>
     </>
-  );
-}
-
-/** Pinned bottom bar — "+ New chat" pill + profile/gear icon, always
- * reachable regardless of how far the Recents list is scrolled. This is
- * the exact bottom grouping from the reference screenshot. */
-function SidebarFooter({ onNavigate, onOpenProfile }: { onNavigate?: () => void; onOpenProfile: () => void }) {
-  const [, navigate] = useLocation();
-  const setConversation = useStore((s) => s.setConversation);
-  const resetChat = useStore((s) => s.resetChat);
-
-  const newChat = () => {
-    setConversation(null);
-    resetChat();
-    navigate("/chat");
-    onNavigate?.();
-  };
-
-  return (
-    <div className="mt-3 flex items-center gap-2">
-      <button onClick={newChat}
-        className="arc-transition flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 py-2.5 text-sm font-bold text-[#10132f] active:scale-[.98]">
-        <MessageSquarePlus size={16} />New chat
-      </button>
-      <button onClick={onOpenProfile} aria-label="Open profile"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 text-xs font-bold text-[#10142f] active:scale-95">
-        DO
-      </button>
-    </div>
   );
 }
 
 function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [drawer, setDrawer] = useState(false);
-  const [profile, setProfile] = useState(false);
 
   return (
-    <div className="arc-shell arc-noise flex text-slate-100">
+    <div className="arc-shell flex text-[#111827]">
       {/* desktop command center */}
-      <aside className="arc-scroll hidden w-[238px] shrink-0 flex-col overflow-y-auto border-r border-white/[.07] bg-[#080b25]/85 px-3 py-5 md:flex">
+      <aside className="arc-scroll hidden w-[248px] shrink-0 flex-col overflow-y-auto border-r border-[#E5E7EB] bg-white px-3 py-5 md:flex">
         <Link href="/chat" className="mb-5 flex items-center gap-3 px-3">
-          <BrandMark small /><span className="font-semibold tracking-[.18em] text-white">ARC<span className="text-cyan-300">.</span></span>
+          <BrandMark small /><span className="font-semibold tracking-[.18em] text-[#111827]">ARC<span className="text-[#007AFF]">.</span></span>
         </Link>
-        <SidebarNav location={location} />
-        <div className="mt-auto" />
-        <SidebarFooter onOpenProfile={() => setProfile(true)} />
+        <SidebarBody location={location} />
       </aside>
 
       <div className="flex h-[var(--app-vh,100dvh)] min-h-0 min-w-0 flex-1 flex-col">
         {/* mobile top bar */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[.07] bg-[#080b25]/70 px-4 backdrop-blur-xl md:hidden">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white/85 px-4 backdrop-blur-xl md:hidden">
           <IconButton label="Open menu" onClick={() => setDrawer(true)}><Menu size={19} /></IconButton>
-          <Link href="/chat" className="flex items-center gap-2"><BrandMark small /><span className="font-semibold tracking-[.16em]">ARC<span className="text-cyan-300">.</span></span></Link>
-          <IconButton label="Open profile" onClick={() => setProfile(true)}>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 text-[10px] font-bold text-[#10142f]">DO</span>
-          </IconButton>
+          <Link href="/chat" className="flex items-center gap-2"><BrandMark small /><span className="font-semibold tracking-[.16em] text-[#111827]">ARC<span className="text-[#007AFF]">.</span></span></Link>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF] text-[10px] font-bold text-white">DO</span>
         </header>
         {/* ONE scroll owner per page, never two: main is a fixed-height slot
-           (overflow-hidden). Each page manages its own internal scroll region
-           (see the "h-full overflow-y-auto" wrapper each page uses). Before this,
-           main scrolled AND ChatPage scrolled internally -- two nested scrollers
-           meant the pinned composer could drift out of view (main would keep
-           "growing" and you had to scroll main itself to reach it) instead of
-           staying glued above the keyboard. */}
+           (overflow-hidden). Each page manages its own internal scroll region.
+           This is what keeps the pinned composer glued above the keyboard —
+           main never grows or scrolls on its own. */}
         <main className="arc-scroll min-w-0 flex-1 overflow-hidden">{children}</main>
       </div>
 
-      {/* mobile drawer (nav+recents) / profile sheet */}
+      {/* mobile drawer — same body as the desktop sidebar */}
       <AnimatePresence>
-        {(drawer || profile) && (
+        {drawer && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-[#020313]/70 backdrop-blur-sm"
-            onClick={() => { setDrawer(false); setProfile(false); }}>
-            <motion.aside initial={{ x: drawer ? -300 : 380 }} animate={{ x: 0 }} exit={{ x: drawer ? -300 : 380 }}
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={() => setDrawer(false)}>
+            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
               transition={{ type: "spring", damping: 28, stiffness: 260 }} onClick={(e) => e.stopPropagation()}
-              className={`absolute ${drawer ? "left-0 border-r" : "right-0 border-l"} top-0 flex h-full w-[min(340px,88vw)] flex-col border-white/[.1] bg-[#0a0d2b] p-5 shadow-2xl`}>
-              <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3"><BrandMark small /><span className="font-semibold tracking-[.18em]">ARC<span className="text-cyan-300">.</span></span></div>
-                <IconButton label="Close" onClick={() => { setDrawer(false); setProfile(false); }}><X size={18} /></IconButton>
+              className="absolute left-0 top-0 flex h-full w-[min(320px,88vw)] flex-col border-r border-[#E5E7EB] bg-white p-4 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3"><BrandMark small /><span className="font-semibold tracking-[.18em] text-[#111827]">ARC<span className="text-[#007AFF]">.</span></span></div>
+                <IconButton label="Close" onClick={() => setDrawer(false)}><X size={18} /></IconButton>
               </div>
-              <div className="arc-scroll flex-1 space-y-1 overflow-y-auto">
-                {drawer && <SidebarNav location={location} onNavigate={() => setDrawer(false)} />}
-                {profile && <ProfileSheet onClose={() => setProfile(false)} />}
+              <div className="arc-scroll flex-1 overflow-y-auto">
+                <SidebarBody location={location} onNavigate={() => setDrawer(false)} onLogOut={() => setDrawer(false)} />
               </div>
-              {drawer && <SidebarFooter onNavigate={() => setDrawer(false)} onOpenProfile={() => { setDrawer(false); setProfile(true); }} />}
             </motion.aside>
           </motion.div>
         )}
@@ -185,7 +198,7 @@ export default function App() {
   const [location] = useLocation();
   useViewportHeight();
 
-  // main no longer scrolls itself (see Shell) -- each page owns its own
+  // main no longer scrolls itself (see Shell) — each page owns its own
   // scroll region now, so reset THAT on navigation.
   useEffect(() => {
     document.querySelector(".arc-page-scroll, .arc-chat-scroll")?.scrollTo({ top: 0 });
@@ -212,7 +225,7 @@ export default function App() {
       <BrowserOverlay />
       {/* Arena.ai has NO ambient web view — it only ever appears when this
          gate needs the operator to complete login once, or when they open
-         Browser themselves. See ArenaLoginGate for the one-time flow. */}
+         Browser themselves. */}
       <ArenaLoginGate />
     </AuthGate>
   );

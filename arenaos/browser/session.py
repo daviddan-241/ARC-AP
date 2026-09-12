@@ -61,6 +61,13 @@ class PersistentBrowser:
                     logger.info("browser routed through tor proxy %s", get_settings().tor_proxy)
                 self._context = await self._playwright.chromium.launch_persistent_context(
                     str(self.profile_dir), headless=self.headless, args=args,
+                    # Realistic desktop Chrome fingerprint so Google/Microsoft
+                    # don't flag the agent's automated sessions as bots —
+                    # default headless UA advertises "HeadlessChrome".
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"),
+                    locale="en-US", timezone_id="America/New_York",
                 )
                 logger.info("agent browser context launched (profile=%s)", self.profile_dir)
         return self._context

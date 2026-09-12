@@ -33,31 +33,31 @@ export default function SkillsPage() {
       <PageHeader eyebrow="Capabilities / 03" title="Skills" description={`${tools.length} live tools wired to the server — run any of them directly.`} />
       <div className="mb-8">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-3 text-slate-600" />
+          <Search size={16} className="absolute left-3 top-3 text-[#9CA3AF]" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search skills"
-            className="arc-focus w-full rounded-xl border border-white/[.09] bg-white/[.035] py-2.5 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600" />
+            className="arc-focus w-full rounded-xl border border-[#E5E7EB] bg-black/[.03] py-2.5 pl-9 pr-3 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
         </div>
       </div>
       {loaded && tools.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-white/[.12] px-6 py-14 text-center">
-          <p className="text-sm text-slate-300">The tool registry isn't reachable right now.</p>
-          <p className="mt-2 text-xs text-slate-600">Reload — if this persists the backend didn't finish booting.</p>
+        <div className="rounded-2xl border border-dashed border-[#E5E7EB] px-6 py-14 text-center">
+          <p className="text-sm text-[#374151]">The tool registry isn't reachable right now.</p>
+          <p className="mt-2 text-xs text-[#9CA3AF]">Reload — if this persists the backend didn't finish booting.</p>
         </div>
       )}
       {Object.entries(grouped).map(([cat, list]) => (
         <section key={cat} className="mb-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">{cat}</h2>
-            <span className="text-xs text-slate-600">{list.length}</span>
+            <h2 className="text-sm font-semibold text-[#111827]">{cat}</h2>
+            <span className="text-xs text-[#9CA3AF]">{list.length}</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {list.map((t) => (
-              <button key={t.name} onClick={() => setActive(t)} className="arc-card rounded-2xl p-4 text-left hover:border-cyan-300/30 active:scale-[.99]">
+              <button key={t.name} onClick={() => setActive(t)} className="arc-card rounded-2xl p-4 text-left hover:border-[#007AFF]/40 active:scale-[.99]">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><TerminalSquare size={16} /></span>
-                  <b className="truncate text-[13.5px] font-semibold text-white">{t.name}</b>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><TerminalSquare size={16} /></span>
+                  <b className="truncate text-[13.5px] font-semibold text-[#111827]">{t.name}</b>
                 </div>
-                <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{t.description ?? "Real server tool."}</p>
+                <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#6B7280]">{t.description ?? "Real server tool."}</p>
               </button>
             ))}
           </div>
@@ -95,35 +95,35 @@ function ToolRunner({ tool, onClose }: { tool: ToolInfo; onClose: () => void }) 
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[#020313]/70 backdrop-blur-sm sm:items-center">
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center">
       <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }} onClick={(e) => e.stopPropagation()}
         transition={{ type: "spring", damping: 28, stiffness: 300 }} className="arc-card max-h-[82vh] w-full max-w-xl overflow-y-auto rounded-t-3xl p-5 sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><TerminalSquare size={16} /></span>
-            <div><b className="block text-sm font-semibold text-white">{tool.name}</b><small className="text-[11px] text-slate-600">real server invocation</small></div>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><TerminalSquare size={16} /></span>
+            <div><b className="block text-sm font-semibold text-[#111827]">{tool.name}</b><small className="text-[11px] text-[#9CA3AF]">real server invocation</small></div>
           </div>
-          <button onClick={onClose} aria-label="Close runner" className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-white/[.07] hover:text-white"><X size={17} /></button>
+          <button onClick={onClose} aria-label="Close runner" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-black/[.05] hover:text-[#111827]"><X size={17} /></button>
         </div>
-        <p className="mb-4 text-xs leading-5 text-slate-500">{tool.description}</p>
+        <p className="mb-4 text-xs leading-5 text-[#6B7280]">{tool.description}</p>
         {argNames.length === 0 ? (
-          <p className="mb-4 text-xs text-slate-600">No arguments — hit run.</p>
+          <p className="mb-4 text-xs text-[#9CA3AF]">No arguments — hit run.</p>
         ) : argNames.map((name) => (
           <div key={name} className="mb-3">
-            <label className="arc-mono mb-1.5 block text-[10px] uppercase tracking-[.2em] text-slate-600">{name}</label>
+            <label className="arc-mono mb-1.5 block text-[10px] uppercase tracking-[.2em] text-[#9CA3AF]">{name}</label>
             <input value={values[name] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [name]: e.target.value }))}
               placeholder={`value for ${name}`}
-              className="arc-focus w-full rounded-xl border border-white/[.09] bg-white/[.035] px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+              className="arc-focus w-full rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
           </div>
         ))}
         <button onClick={run} disabled={busy}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cyan-300 to-violet-500 py-2.5 text-sm font-bold text-[#10132f] disabled:opacity-40 active:scale-[.98]">
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#007AFF] py-2.5 text-sm font-bold text-white disabled:opacity-40 active:scale-[.98]">
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}Run tool
         </button>
         {result && (
           <div className="mt-4">
-            <p className={`arc-mono mb-1.5 text-[10px] uppercase tracking-[.2em] ${result.ok ? "text-emerald-300" : "text-rose-300"}`}>{result.ok ? "Result" : "Failed"}</p>
-            <pre className="arc-scroll max-h-56 overflow-auto rounded-xl border border-white/[.07] bg-[#0b0e28] p-3 text-[12px] leading-relaxed text-slate-300">{result.ok ? (result.output ?? "(empty output)") : (result.error ?? "unknown error")}</pre>
+            <p className={`arc-mono mb-1.5 text-[10px] uppercase tracking-[.2em] ${result.ok ? "text-emerald-600" : "text-rose-600"}`}>{result.ok ? "Result" : "Failed"}</p>
+            <pre className="arc-scroll max-h-56 overflow-auto rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-3 text-[12px] leading-relaxed text-[#374151]">{result.ok ? (result.output ?? "(empty output)") : (result.error ?? "unknown error")}</pre>
           </div>
         )}
       </motion.div>

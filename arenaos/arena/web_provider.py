@@ -283,6 +283,13 @@ class ArenaWebSession:
                     str(profile_dir),
                     headless=self.config.headless,
                     viewport={"width": 1280, "height": 800},
+                    # Realistic desktop Chrome fingerprint (arena.ai + webmail
+                    # sessions) — default headless UA gets flagged by
+                    # Google/Microsoft bot detection.
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"),
+                    locale="en-US", timezone_id="America/New_York",
                 )
 
             pages = self._context.pages

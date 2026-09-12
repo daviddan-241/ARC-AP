@@ -73,68 +73,68 @@
   --badge-outline: rgba(0, 0, 0, 0.05);
 
   /* Automatic computation of border around primary / danger buttons */
-  --opaque-button-border-intensity: -8; /* In terms of percentages */
+  --opaque-button-border-intensity: 8; /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
   --elevate-1: rgba(0, 0, 0, 0.03);
   --elevate-2: rgba(0, 0, 0, 0.08);
 
-  --background: 230 48% 7%;
+    --background: 210 20% 98%;
 
-  --foreground: 222 33% 94%;
+  --foreground: 217 19% 15%;
 
-  --border: 228 31% 19%;
+  --border: 216 13% 91%;
 
-  --card: 229 38% 11%;
+  --card: 0 0% 100%;
 
-  --card-foreground: 222 33% 94%;
+  --card-foreground: 217 19% 15%;
 
-  --card-border: 228 31% 20%;
+  --card-border: 216 13% 91%;
 
-  --sidebar: 232 49% 6%;
+  --sidebar: 0 0% 100%;
 
-  --sidebar-foreground: 221 24% 79%;
+  --sidebar-foreground: 220 9% 40%;
 
-  --sidebar-border: 228 31% 17%;
+  --sidebar-border: 216 13% 91%;
 
-  --sidebar-primary: 274 86% 63%;
+  --sidebar-primary: 211 100% 50%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 231 36% 14%;
+  --sidebar-accent: 220 14% 96%;
 
-  --sidebar-accent-foreground: 222 33% 94%;
+  --sidebar-accent-foreground: 217 19% 15%;
 
-  --sidebar-ring: 194 92% 62%;
+  --sidebar-ring: 211 100% 50%;
 
-  --popover: 231 43% 10%;
+  --popover: 0 0% 100%;
 
-  --popover-foreground: 222 33% 94%;
+  --popover-foreground: 217 19% 15%;
 
-  --popover-border: 228 31% 22%;
+  --popover-border: 216 13% 91%;
 
-  --primary: 274 86% 63%;
+  --primary: 211 100% 50%;
 
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 231 36% 15%;
+  --secondary: 220 14% 96%;
 
-  --secondary-foreground: 222 33% 94%;
+  --secondary-foreground: 217 19% 15%;
 
-  --muted: 229 27% 15%;
+  --muted: 220 14% 96%;
 
-  --muted-foreground: 222 16% 61%;
+  --muted-foreground: 220 9% 46%;
 
-  --accent: 194 92% 62%;
+  --accent: 211 100% 50%;
 
-  --accent-foreground: 230 48% 7%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 3 84% 63%;
+  --destructive: 0 72% 51%;
 
   --destructive-foreground: 0 0% 100%;
 
-  --input: 228 31% 26%;
-  --ring: 194 92% 62%;
+  --input: 216 13% 91%;
+  --ring: 211 100% 50%;
   --chart-1: 274 86% 63%;
   --chart-2: 194 92% 62%;
   --chart-3: 325 79% 62%;
@@ -436,27 +436,21 @@
 @layer base {
   body {
     min-width: 320px;
-    background:
-      radial-gradient(circle at 78% -12%, hsl(274 86% 63% / 0.13), transparent 34rem),
-      radial-gradient(circle at 8% 88%, hsl(194 92% 62% / 0.06), transparent 28rem),
-      hsl(var(--background));
+    background: hsl(var(--background));
   }
   button, input, textarea, select { font: inherit; }
   button { cursor: pointer; }
 }
 
 .arc-shell { min-height: var(--app-vh, 100dvh); position: relative; overflow: hidden; }
-.arc-noise::after {
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: .035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
-}
+.arc-noise::after { content: none; } /* no noise on the clean light surface */
 .arc-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .arc-scroll::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; }
 .arc-grid {
   background-image: linear-gradient(hsl(var(--foreground) / .035) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / .035) 1px, transparent 1px);
   background-size: 32px 32px;
 }
-.arc-card { background: linear-gradient(140deg, hsl(229 38% 13% / .94), hsl(230 40% 9% / .82)); border: 1px solid hsl(var(--border)); box-shadow: 0 18px 60px hsl(230 48% 3% / .26); }
+.arc-card { background: hsl(var(--card)); border: 1px solid hsl(var(--card-border)); box-shadow: 0 1px 2px hsl(217 19% 15% / .05), 0 8px 24px hsl(217 19% 15% / .05); }
 .arc-glass { background: hsl(230 45% 9% / .72); border: 1px solid hsl(var(--foreground) / .09); backdrop-filter: blur(18px); }
 .arc-title { font-family: var(--app-font-serif); letter-spacing: -.04em; }
 .arc-mono { font-family: var(--app-font-mono); }
@@ -469,17 +463,17 @@
 .arc-focus:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
 textarea, input { outline: none !important; -webkit-tap-highlight-color: transparent; }
 .arc-transition { transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, opacity .2s ease; }
-.arc-chat-page { background: linear-gradient(180deg, hsl(230 44% 8% / .18), transparent 26%); }
+.arc-chat-page { background: linear-gradient(180deg, hsl(211 100% 50% / .04), transparent 22%); }
 .arc-chat-scroll { overscroll-behavior: contain; }
 .arc-composer-dock {
-  background: linear-gradient(180deg, transparent, hsl(230 44% 8% / .96) 26%);
+  background: linear-gradient(180deg, transparent, hsl(0 0% 100% / .96) 26%);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
 /* the Gemini-style single pill: rounded-full, border-color is the ONLY focus
    affordance (no outline, no box-shadow ring) -- matches the reference shots */
 .arc-composer-pill { transition: border-color 160ms ease, background-color 160ms ease; }
-.arc-composer-pill:focus-within { border-color: hsl(var(--accent) / 0.45); }
+.arc-composer-pill:focus-within { border-color: hsl(var(--accent) / 0.55); box-shadow: 0 0 0 3px hsl(var(--accent) / .12); }
 @media (max-width: 767px) {
   .arc-shell { padding-bottom: env(safe-area-inset-bottom); }
   .arc-shell > .flex > header { padding-top: max(0.75rem, env(safe-area-inset-top)); }
