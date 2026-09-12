@@ -37,7 +37,7 @@ export default function LibraryPage() {
   const images = filtered.filter((f) => IMAGES.test(f.name));
 
   return (
-    <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
+    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Memory / 05" title="Library" description="Files you've attached and the agent has produced — stored on the server, downloadable anytime." action={
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
           className="flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.04] px-4 py-2.5 text-xs font-bold text-white hover:bg-white/[.08] disabled:opacity-40">

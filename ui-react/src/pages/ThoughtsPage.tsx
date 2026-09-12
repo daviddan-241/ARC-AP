@@ -12,7 +12,7 @@ export default function ThoughtsPage() {
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
+    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Reasoning / 02" title="Thoughts" description="The agent's live exploration — every tool it runs, every result it gets, as it happens." action={
         steps.length > 0 || sources.length > 0 ? (
           <button onClick={clearThoughts} className="flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.04] px-4 py-2.5 text-xs font-bold text-white hover:bg-white/[.08]"><Trash2 size={14} />Clear run</button>

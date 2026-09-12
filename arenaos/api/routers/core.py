@@ -5,9 +5,8 @@ import json
 import os
 import uuid
 from pathlib import Path
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -171,11 +170,11 @@ class MemoryBody(BaseModel):
     content: str
     key: str = ""
     tags: list = []
-    project_id: Optional[str] = None
+    project_id: str | None = None
 
 
 @router.get("/memory")
-def memory_search(q: str = "", layer: Optional[str] = None,
+def memory_search(q: str = "", layer: str | None = None,
                   request: Request = None, user=Depends(get_current_user)) -> list[dict]:
     store = request.app.state.memory
     if q:
@@ -341,6 +340,22 @@ def vault_delete(name: str, request: Request, user=Depends(get_current_user)) ->
     return {"ok": True}
 
 
+@router.post("/integrations/appdeploy/provision")
+async def appdeploy_provision(request: Request, user=Depends(get_current_user)) -> dict:
+    """One-click free AppDeploy key: calls AppDeploy's real key endpoint and
+    stores the result encrypted in the vault. The key itself is never
+    returned to the client."""
+    import asyncio
+
+    from arenaos.tools.appdeploy import provision_key
+
+    try:
+        summary = await asyncio.wait_for(provision_key(), timeout=45.0)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"provisioning failed: {exc}")
+    return {"ok": True, "detail": summary}
+
+
 # ---------------------------------------------------------------- status + live events
 
 @router.get("/status")
@@ -352,12 +367,17 @@ def status(request: Request, user=Depends(get_current_user)) -> dict:
         arena_status = arena_row.value if arena_row else None
     finally:
         session.close()
+    secrets = request.app.state.secrets
+    vault_names = {item.get("name") for item in secrets.list()}
     return {
         "transport": settings.arena_transport,
-        "arena_provider": getattr(request.app.state.provider, "config").name
+        "arena_provider": request.app.state.provider.config.name
                           if request.app.state.provider else None,
         "arena_session_status": arena_status,
         "engine_ready": request.app.state.engine is not None,
+        # presence only — key VALUES never leave the server
+        "appdeploy_key": "appdeploy_api_key" in vault_names,
+        "composio_key": "composio_api_key" in vault_names,
     }
 
 

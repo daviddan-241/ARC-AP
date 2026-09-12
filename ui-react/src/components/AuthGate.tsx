@@ -4,7 +4,12 @@ import { api, sha256Hex } from "../lib/api";
 import { useStore } from "../lib/store";
 import BrandMark from "./BrandMark";
 
-type Phase = "loading" | "password" | "pin" | "ready";
+type Phase = "loading" | "waking" | "password" | "pin" | "ready";
+
+/* Escalating timeouts that bracket a free-host cold start (30-60s): the
+ * default 25s request budget fails right in the middle of waking up, which
+ * is what made login look like an infinite spinner. 25s → 40s → 90s. */
+const BOOT_BUDGETS_MS = [25000, 40000, 90000];
 
 /** Real auth gate for the whole app: operator password → 4-digit PIN.
  * Everything is verified against the live backend — nothing is faked. */
@@ -13,18 +18,43 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const authed = useStore((s) => s.authed);
   const [phase, setPhase] = useState<Phase>("loading");
   const [pinHash, setPinHash] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [offline, setOffline] = useState(false);
+  const [retryToken, setRetryToken] = useState(0);
 
+  // Boot check with escalating retries through the cold-start window.
+  // Never spins forever: after the last budget it lands on the password
+  // screen with an honest banner + a manual retry — the user is never stuck.
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      try {
-        const st = await api.settings();
-        setPinHash((st as Record<string, string>).pin_hash || null);
-        setPhase("password");
-      } catch {
-        setPhase("password");
+      for (let i = 0; i < BOOT_BUDGETS_MS.length; i++) {
+        if (cancelled) return;
+        setAttempt(i + 1);
+        try {
+          const st = await api.settingsSlow(BOOT_BUDGETS_MS[i]);
+          if (cancelled) return;
+          setPinHash((st as Record<string, string>).pin_hash || null);
+          setOffline(false);
+          setPhase("password");
+          return;
+        } catch {
+          if (cancelled) return;
+          if (i < BOOT_BUDGETS_MS.length - 1) {
+            // timed out mid cold-start — the host is still waking; show that honestly
+            setPhase("waking");
+            await new Promise((r) => setTimeout(r, 2000));
+          } else {
+            setOffline(true);
+            setPhase("password");
+          }
+        }
       }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [retryToken]);
+
+  const retryBoot = () => { setOffline(false); setPhase("loading"); setRetryToken((t) => t + 1); };
 
   // after the operator password verifies, the PIN (if one exists) unlocks the app
   useEffect(() => {
@@ -43,7 +73,18 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             <p className="mt-1 text-xs text-slate-500">Operator access only</p>
           </div>
         </div>
-        {phase === "loading" && <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-500"><Loader2 size={16} className="animate-spin" />Checking session…</div>}
+        {(phase === "loading" || phase === "waking") && (
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+          <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 size={16} className="animate-spin" />{phase === "waking" ? "Host still waking up…" : "Checking session…"}</div>
+          <p className="text-[11px] text-slate-600">Free hosting cold start can take up to a minute — attempt {attempt}/{BOOT_BUDGETS_MS.length}.</p>
+        </div>
+      )}
+      {phase === "password" && offline && (
+        <div className="mb-4 rounded-xl border border-amber-300/25 bg-amber-300/10 p-3 text-[12px] text-amber-200">
+          The server didn't respond (still cold-starting or offline). You can retry the connection or type your password once it's up.
+          <button onClick={retryBoot} className="mt-2 block w-full rounded-lg bg-amber-300/20 px-3 py-2 font-medium text-amber-100 active:scale-95">Retry connection</button>
+        </div>
+      )}
         {phase === "password" && <PasswordForm onDone={async () => {
           const st = await api.settings();
           setPinHash((st as Record<string, string>).pin_hash || null);
@@ -66,8 +107,12 @@ function PasswordForm({ onDone }: { onDone: () => void }) {
     try {
       await api.login(password);
       await onDone();
-    } catch {
-      setError("Wrong password — this is the operator password set on the server.");
+    } catch (e) {
+      const msg = String((e as Error)?.message || e);
+      // Honest errors: a timeout is NOT "wrong password" — say what happened.
+      setError(msg.includes("timed out")
+        ? "The server didn't answer in time (cold start or offline). Tap Unlock again in a moment — your password wasn't checked yet."
+        : "Wrong password — this is the operator password set on the server.");
     } finally { setBusy(false); }
   };
 

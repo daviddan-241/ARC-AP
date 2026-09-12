@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, Check, ChevronDown, ChevronRight, Loader2, Mic, Paperclip, Plus, Send, SlidersHorizontal, Sparkles, X, Zap } from "lucide-react";
+import { ArrowDown, BrainCircuit, Check, ChevronDown, ChevronRight, Loader2, Mic, Paperclip, Plus, Send, SlidersHorizontal, Sparkles, X, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { api, streamTurn, uploadsProjectId } from "../lib/api";
 import type { ChatMessage } from "../lib/api";
@@ -69,6 +69,39 @@ export default function ChatPage() {
   };
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // "Jump to latest" only shows when you've actually scrolled away from the
+  // bottom -- and, just as importantly, we STOP force-scrolling you back down
+  // once you've scrolled up on purpose. Real chat apps never yank your scroll
+  // position out from under you.
+  //
+  // This used to be threshold math on the 'scroll' event combined with
+  // `scrollIntoView({behavior:'smooth'})` re-fired on every streamed token.
+  // The smooth animation can't be interrupted cleanly by a manual scroll
+  // mid-flight, so every new token effectively restarted the fight and
+  // snapped the view back down — "it keeps going to the end, doesn't stay
+  // out". Fixed with the pattern real chat apps (Discord/Slack/ChatGPT) use:
+  // an IntersectionObserver watching a sentinel div right after the last
+  // message, plus an INSTANT (non-animated) follow-scroll while streaming,
+  // so there's never an animation for a manual scroll to fight.
+  const [atBottom, setAtBottom] = useState(true);
+  useEffect(() => {
+    const el = scrollRef.current;
+    const sentinel = bottomRef.current;
+    if (!el || !sentinel) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setAtBottom(entry.isIntersecting),
+      { root: el, threshold: 0, rootMargin: "0px 0px 32px 0px" },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, []);
+  const scrollToBottom = (smooth = true) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    setAtBottom(true);
+  };
 
   useEffect(() => {
     if (!conversationId) { clearThoughts(); return; }
@@ -82,7 +115,12 @@ export default function ChatPage() {
     return () => { alive = false; };
   }, [conversationId, clearThoughts]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, thinking]);
+  useEffect(() => {
+    // instant, not smooth: an ongoing animation is what fights a manual
+    // scroll — an instant jump has nothing to fight, so a real scroll-up
+    // always wins immediately, every time.
+    if (atBottom) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "auto" });
+  }, [messages, thinking, atBottom]);
 
   const attach = async (file: File) => {
     setAttaching(true);
@@ -164,8 +202,8 @@ export default function ChatPage() {
   const showEmpty = messages.length === 0;
 
   return (
-    <div className="arc-chat-page flex h-full min-h-0 flex-col">
-      <div className="arc-chat-scroll flex-1 overflow-y-auto px-4 pt-6 sm:px-8">
+    <div className="arc-chat-page relative flex h-full min-h-0 flex-col">
+      <div ref={scrollRef} className="arc-chat-scroll flex-1 overflow-y-auto px-4 pt-6 sm:px-8">
         <div className="mx-auto max-w-3xl">
           {showEmpty ? (
             <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
@@ -204,6 +242,24 @@ export default function ChatPage() {
           ))}
         </div>
       )}
+
+      {/* small floating "jump to latest" button — only visible once you've
+         actually scrolled away from the bottom, per the reference shot.
+         Sits just above the composer, centered, fades in/out. */}
+      <AnimatePresence>
+        {!atBottom && !showEmpty && (
+          <motion.button
+            key="jump-to-bottom"
+            initial={{ opacity: 0, y: 8, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 8, x: "-50%" }}
+            onClick={() => scrollToBottom(true)}
+            aria-label="Jump to latest message"
+            className="arc-jump-btn absolute bottom-[6.5rem] left-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/[.12] bg-[#111531] text-slate-200 shadow-xl active:scale-95 sm:bottom-[6.75rem]">
+            <ArrowDown size={16} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* the real composer — a single Gemini-style pill: + / input / mic-or-send.
          Fast/Deep + attach live one tap away in the sheet below, so the main

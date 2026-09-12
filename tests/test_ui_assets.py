@@ -76,3 +76,51 @@ def test_no_sub_16px_font_size_in_source_inputs() -> None:
             if size and float(size.group(1)) < 16:
                 offenders.append(f"{f.name}: {tag[:80]}")
     assert not offenders, f"inputs below 16px: {offenders}"
+
+
+def test_viewport_hook_never_listens_to_visualviewport_scroll() -> None:
+    """Regression: listening to visualViewport 'scroll' (not just 'resize')
+    re-applied --app-vh on every iOS auto-pan-to-keep-input-visible event,
+    forcing a shell re-layout mid-pan — this is what made the composer and
+    message list appear to 'keep moving' while the keyboard was open.
+    Only 'resize' should ever be wired up."""
+    src = (SRC / "lib" / "useViewportHeight.ts").read_text()
+    assert 'addEventListener("resize"' in src
+    assert 'addEventListener("scroll"' not in src
+
+
+def test_chat_scroll_uses_intersection_observer_not_fighting_smooth_scroll() -> None:
+    """Regression: `scrollIntoView({behavior:'smooth'})` re-fired on every
+    streamed token can't be interrupted cleanly by a manual scroll mid-flight,
+    so the view kept snapping back to the bottom no matter how far up you
+    scrolled ('it keeps going to the end, doesn't stay out'). The real fix
+    (same pattern Discord/Slack/ChatGPT use): an IntersectionObserver on a
+    bottom sentinel, and an INSTANT follow-scroll that has nothing to fight."""
+    src = (SRC / "pages" / "ChatPage.tsx").read_text()
+    assert "IntersectionObserver" in src
+    assert ".scrollIntoView(" not in src  # replaced entirely by scrollTo calls
+    # the per-token auto-follow must be instant ("auto"), never smooth --
+    # smooth is fine for the one-shot manual jump button, but an ANIMATED
+    # follow-scroll on every token is exactly what fights a manual scroll-up
+    assert 'behavior: "auto" })' in src
+
+
+def test_jump_to_bottom_button_is_actually_rendered() -> None:
+    """Regression: `ArrowDown` was imported but never used in JSX — the
+    'jump to latest' button was requested but silently missing from the
+    real page. Confirms the button element and its click handler exist."""
+    src = (SRC / "pages" / "ChatPage.tsx").read_text()
+    assert "arc-jump-btn" in src
+    assert "Jump to latest message" in src
+    assert "<ArrowDown" in src
+
+
+def test_connections_page_collapses_extra_integrations() -> None:
+    """Only the 3 core connections (arena.ai, agent email, browser) show by
+    default; AppDeploy/Composio and anything added later stay behind a
+    'Show more' toggle so this page can't turn into a wall of cards."""
+    src = (SRC / "pages" / "PluginsPage.tsx").read_text()
+    assert "const core: Conn[]" in src
+    assert "const extra: Conn[]" in src
+    assert "showMore" in src
+    assert "Show more" in src or "more integrations" in src

@@ -12,7 +12,7 @@ export default function BrowserPage() {
   const go = (target: string, page: "arena" | "webmail" | "free" = "free") => openBrowser(target, page);
 
   return (
-    <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
+    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Surfaces / 08" title="Browser" description="The agent's real browser, streamed live. Log into anything here — the session stays on the server." />
       <div className="mb-8 grid gap-3 sm:grid-cols-2">
         <button onClick={() => go("https://arena.ai", "arena")} className="arc-card flex items-center gap-3 rounded-2xl p-4 text-left hover:border-cyan-300/30 active:scale-[.99]">

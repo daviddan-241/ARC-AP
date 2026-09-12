@@ -36,7 +36,11 @@ def build_registry(sandbox: ExecutionSandbox, browser: PersistentBrowser,
     registry.register(InstallPackagesTool(sandbox))
     registry.register(BrowserTool(browser))
     from arenaos.tools.email import (
-        EmailCodeTool, EmailReadTool, EmailSendTool, EmailTapLinkTool)
+        EmailCodeTool,
+        EmailReadTool,
+        EmailSendTool,
+        EmailTapLinkTool,
+    )
     email_session_ref = {"get": lambda: getattr(
         getattr(forge_context.get("state", None), "provider", None), "session", None)}
     registry.register(EmailReadTool(email_session_ref))
@@ -47,18 +51,40 @@ def build_registry(sandbox: ExecutionSandbox, browser: PersistentBrowser,
     # gpt-researcher, TorBot) — execute the actual vendored code.
     from arenaos.tools.integrations import register_integrations
     register_integrations(registry)
+    # Real external platforms over the MCP protocol:
+    #   appdeploy — free hosting for apps ARC builds (appdeploy.ai)
+    #   composio  — 1,500+ app integrations via the Composio gateway
+    from arenaos.tools.appdeploy import register_appdeploy
+    from arenaos.tools.composio import register_composio
+    register_appdeploy(registry)
+    register_composio(registry)
     # Skill library: list/use/create/install SKILL.md playbooks
+    # Specialist delegation: real sub agent-loops with whitelisted tools.
+    from arenaos.tools.delegate import DelegateTool
+    registry.register(DelegateTool({"get": lambda: forge_context.get("state")}))
     from arenaos.tools.skills import (
-        SkillCreateTool, SkillInstallTool, SkillListTool, SkillUseTool)
+        SkillCreateTool,
+        SkillInstallTool,
+        SkillListTool,
+        SkillUseTool,
+    )
     registry.register(SkillListTool())
     registry.register(SkillUseTool())
     registry.register(SkillCreateTool())
     registry.register(SkillInstallTool())
     # Obsidian-compatible vault
-    from arenaos.tools.notes import NoteReadTool, NoteSearchTool, NoteWriteTool
+    from arenaos.tools.notes import (
+        NoteBacklinksTool,
+        NoteListTool,
+        NoteReadTool,
+        NoteSearchTool,
+        NoteWriteTool,
+    )
     registry.register(NoteWriteTool())
     registry.register(NoteReadTool())
     registry.register(NoteSearchTool())
+    registry.register(NoteListTool())
+    registry.register(NoteBacklinksTool())
     # Multi-agent: nested agent loops (lazy ref -> complete fn + registry)
     from arenaos.tools.agents import AgentSpawnTool
     _state = forge_context.get("state")

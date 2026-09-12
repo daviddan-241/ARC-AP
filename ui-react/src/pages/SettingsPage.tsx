@@ -35,7 +35,7 @@ export default function SettingsPage() {
   const arenaChip = arena.status === "ready" ? "text-emerald-300" : arena.status === "login_required" || arena.status === "captcha_required" ? "text-amber-300" : "text-slate-400";
 
   return (
-    <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
+    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Control room / 07" title="Settings" description="Tune the operator layer and keep the real sessions healthy." />
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">

@@ -41,7 +41,7 @@ export default function AutomationsPage() {
     : "bg-white/[.06] text-slate-400";
 
   return (
-    <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
+    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Autonomy / 04" title="Automations" description="Hand the agent a goal — it plans, runs real tools, and reports back. Approve anything that needs permission." action={
         <button onClick={refresh} className="flex items-center gap-2 rounded-xl border border-white/[.1] bg-white/[.04] px-4 py-2.5 text-xs font-bold text-white hover:bg-white/[.08]"><RefreshCw size={14} />Refresh</button>
       } />

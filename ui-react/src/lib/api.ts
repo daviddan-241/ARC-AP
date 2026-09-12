@@ -19,10 +19,11 @@ export type SSEEvent =
   | { kind: "done"; model?: string }
   | { kind: "error"; error: string };
 
-async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  // No infinite spinners, ever: every request has a hard timeout.
+async function req<T>(path: string, opts: RequestInit = {}, timeoutMs = 25000): Promise<T> {
+  // No infinite spinners, ever: every request has a hard timeout. Callers may
+  // pass a longer budget (e.g. the boot check waits out a free-host cold start).
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 25000);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let res: Response;
   try {
     res = await fetch(path, { credentials: "include", signal: ctrl.signal, ...opts });
@@ -47,8 +48,11 @@ export const api = {
   // auth / settings
   login: (password: string) => req<{ ok?: boolean }>("/api/auth/login", { method: "POST", ...json({ password }) }),
   settings: () => req<Record<string, string>>("/api/settings"),
+  // Boot/session check with a caller-chosen budget: free-host cold starts run
+  // 30-60s, so the login gate escalates rather than failing at the default 25s.
+  settingsSlow: (timeoutMs: number) => req<Record<string, string>>("/api/settings", {}, timeoutMs),
   putSetting: (key: string, value: string) => req<unknown>("/api/settings", { method: "PUT", ...json({ key, value }) }),
-  status: () => req<{ transport?: string; engine_ready?: boolean; arena_session_status?: { status?: string; detail?: string } }>("/api/status"),
+  status: () => req<{ transport?: string; engine_ready?: boolean; appdeploy_key?: boolean; composio_key?: boolean; arena_session_status?: { status?: string; detail?: string } }>("/api/status"),
   moods: () => req<Mood[]>("/api/moods"),
 
   // conversations
@@ -77,7 +81,16 @@ export const api = {
   uploadFile: async (projectId: string, file: File) => {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`/api/projects/${projectId}/files/upload`, { method: "POST", body: fd, credentials: "include" });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 120000); // 2min for big files, then a real error
+    let res: Response;
+    try {
+      res = await fetch(`/api/projects/${projectId}/files/upload`, { method: "POST", body: fd, credentials: "include", signal: ctrl.signal });
+    } catch {
+      throw new Error("upload timed out");
+    } finally {
+      clearTimeout(timer);
+    }
     if (!res.ok) throw new Error("upload failed");
   },
   fileDownloadUrl: (projectId: string, path: string) => `/api/projects/${projectId}/files/download?path=${encodeURIComponent(path)}`,
@@ -85,6 +98,8 @@ export const api = {
   // vault
   vault: () => req<VaultItem[]>("/api/vault"),
   putVault: (name: string, kind: string, value: string) => req<unknown>("/api/vault", { method: "POST", ...json({ name, kind, value }) }),
+  // one-click free AppDeploy key (server provisions it + stores encrypted)
+  provisionAppDeploy: () => req<{ ok: boolean; detail: string }>("/api/integrations/appdeploy/provision", { method: "POST" }),
 
   exportMemory: () => req<unknown>("/api/memory/export"),
 };

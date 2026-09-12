@@ -29,7 +29,7 @@ export default function SkillsPage() {
   }, [tools, query]);
 
   return (
-    <div className="mx-auto min-h-full max-w-5xl px-4 py-8 pb-24 sm:px-8 lg:px-12">
+    <div className="arc-page-scroll mx-auto h-full max-w-5xl overflow-y-auto px-4 py-8 pb-24 sm:px-8 lg:px-12">
       <PageHeader eyebrow="Capabilities / 03" title="Skills" description={`${tools.length} live tools wired to the server — run any of them directly.`} />
       <div className="mb-8">
         <div className="relative">
