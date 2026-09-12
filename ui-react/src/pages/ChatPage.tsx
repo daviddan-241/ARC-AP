@@ -43,10 +43,20 @@ export default function ChatPage() {
   const streamRef = useRef(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
+  // honest mic fallback: if this browser has no SpeechRecognition, SAY so
+  // instead of a silent no-op tap — a button that does nothing invisibly is
+  // exactly the kind of fake this app doesn't ship.
+  const [micMsg, setMicMsg] = useState("");
+  const micMsgTimer = useRef<number | null>(null);
+  const showMicMsg = (msg: string) => {
+    setMicMsg(msg);
+    if (micMsgTimer.current) window.clearTimeout(micMsgTimer.current);
+    micMsgTimer.current = window.setTimeout(() => setMicMsg(""), 2600);
+  };
   const toggleMic = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setText((t) => t); // no fake dictation — browser genuinely doesn't support it
+      showMicMsg("Dictation isn't supported in this browser.");
       textRef.current?.focus();
       return;
     }
@@ -62,11 +72,21 @@ export default function ChatPage() {
       setText(base + transcript);
     };
     rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
+    rec.onerror = (e: any) => {
+      setListening(false);
+      const why: Record<string, string> = {
+        "not-allowed": "Microphone permission was denied — enable it in your browser settings.",
+        "service-not-allowed": "The browser blocked dictation services for this page.",
+        "no-speech": "Didn't catch any speech — try again.",
+        "audio-capture": "No microphone found on this device.",
+      };
+      showMicMsg(why[e?.error] ?? "Dictation failed — try again.");
+    };
     recognitionRef.current = rec;
     setListening(true);
     rec.start();
   };
+  useEffect(() => () => { if (micMsgTimer.current) window.clearTimeout(micMsgTimer.current); }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -273,6 +293,9 @@ export default function ChatPage() {
               <button onClick={() => setAttachName(null)} aria-label="Remove attachment" className="text-slate-500 hover:text-white">×</button>
             </div>
           </div>
+        )}
+        {micMsg && (
+          <p className="mb-1.5 text-center text-[11.5px] text-amber-300/90" role="status">{micMsg}</p>
         )}
         <div className="arc-composer-pill flex items-end gap-1 rounded-full border border-white/[.11] bg-[#111531] p-1.5 shadow-2xl">
           <button onClick={() => setSheetOpen(true)} aria-label="More options"

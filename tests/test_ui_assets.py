@@ -124,3 +124,27 @@ def test_connections_page_collapses_extra_integrations() -> None:
     assert "const extra: Conn[]" in src
     assert "showMore" in src
     assert "Show more" in src or "more integrations" in src
+
+
+def test_settings_has_no_fake_appearance_toggle() -> None:
+    """Regression: the Appearance card (Dark/Light/System) was a fake —
+    'Light' only repainted a body background hidden behind the opaque dark
+    shell, 'System' had no CSS rule at all, and nothing persisted. Per the
+    no-fake-buttons rule it was removed rather than half-implemented."""
+    src = (SRC / "pages" / "SettingsPage.tsx").read_text()
+    assert "Appearance" not in src
+    assert "setAppearance" not in src
+    assert "data-arc-theme" not in src
+    css = _app_css()
+    assert "data-arc-theme" not in css  # the dead CSS rule is gone too
+
+
+def test_mic_button_gives_honest_feedback_when_unsupported() -> None:
+    """Regression: on browsers without SpeechRecognition the mic silently did
+    nothing (`setText((t) => t)` no-op). Now it must say so, and dictation
+    errors must surface a human-readable reason instead of dying quietly."""
+    src = (SRC / "pages" / "ChatPage.tsx").read_text()
+    assert "setText((t) => t)" not in src  # the silent no-op is gone
+    assert "Dictation isn't supported in this browser" in src
+    assert "Microphone permission was denied" in src  # honest error mapping
+    assert 'role="status"' in src  # announced to screen readers too

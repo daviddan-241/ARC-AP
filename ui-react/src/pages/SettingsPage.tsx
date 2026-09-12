@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Globe, KeyRound, Loader2, LockKeyhole, Mail, Moon, Monitor, RotateCcw, Sun } from "lucide-react";
+import { Globe, KeyRound, Loader2, LockKeyhole, Mail, RotateCcw } from "lucide-react";
 import { api, sha256Hex } from "../lib/api";
 import { useStore } from "../lib/store";
 import PageHeader from "../components/PageHeader";
@@ -8,17 +8,12 @@ import PageHeader from "../components/PageHeader";
  * sign-in workspace), the agent email, the PIN lock, and the platform status. */
 export default function SettingsPage() {
   const openBrowser = useStore((s) => s.openBrowser);
-  const [appearance, setAppearance] = useState<"dark" | "light" | "system">("dark");
   const [status, setStatus] = useState<{ transport?: string; engine_ready?: boolean; arena_session_status?: { status?: string; detail?: string } } | null>(null);
   const [pin, setPin] = useState("");
   const [pinMsg, setPinMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { api.status().then(setStatus).catch(() => null); }, []);
-  useEffect(() => {
-    document.documentElement.dataset.arcTheme = appearance;
-    return () => { delete document.documentElement.dataset.arcTheme; };
-  }, [appearance]);
 
   const savePin = async () => {
     if (!/^\d{4}$/.test(pin)) { setPinMsg("Enter a 4-digit PIN."); return; }
@@ -96,19 +91,6 @@ export default function SettingsPage() {
         </section>
 
         <section className="space-y-5">
-          {/* appearance — real theme switch */}
-          <div className="arc-card rounded-3xl p-5">
-            <h2 className="mb-4 text-sm font-semibold text-white">Appearance</h2>
-            <div className="flex gap-2">
-              {([["dark", Moon], ["light", Sun], ["system", Monitor]] as const).map(([value, Icon]) => (
-                <button key={value} onClick={() => setAppearance(value)}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold ${appearance === value ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-200" : "border-white/[.1] text-slate-400 hover:text-white"}`}>
-                  <Icon size={14} />{value[0].toUpperCase() + value.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* platform status — real backend values */}
           <div className="arc-card rounded-3xl p-5">
             <h2 className="mb-4 text-sm font-semibold text-white">Platform</h2>

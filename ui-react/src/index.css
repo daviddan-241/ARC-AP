@@ -480,12 +480,6 @@ textarea, input { outline: none !important; -webkit-tap-highlight-color: transpa
    affordance (no outline, no box-shadow ring) -- matches the reference shots */
 .arc-composer-pill { transition: border-color 160ms ease, background-color 160ms ease; }
 .arc-composer-pill:focus-within { border-color: hsl(var(--accent) / 0.45); }
-[data-arc-theme="light"] body {
-  background:
-    radial-gradient(circle at 78% -12%, hsl(274 86% 63% / 0.10), transparent 34rem),
-    radial-gradient(circle at 8% 88%, hsl(194 92% 62% / 0.08), transparent 28rem),
-    hsl(226 30% 96%);
-}
 @media (max-width: 767px) {
   .arc-shell { padding-bottom: env(safe-area-inset-bottom); }
   .arc-shell > .flex > header { padding-top: max(0.75rem, env(safe-area-inset-top)); }
