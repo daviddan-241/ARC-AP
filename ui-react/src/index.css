@@ -445,7 +445,7 @@
   button { cursor: pointer; }
 }
 
-.arc-shell { min-height: 100dvh; position: relative; overflow: hidden; }
+.arc-shell { min-height: var(--app-vh, 100dvh); position: relative; overflow: hidden; }
 .arc-noise::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: .035;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
@@ -462,14 +462,24 @@
 .arc-mono { font-family: var(--app-font-mono); }
 .arc-gradient { background: linear-gradient(125deg, hsl(194 92% 62%), hsl(274 86% 63%) 55%, hsl(325 79% 62%)); }
 .arc-gradient-text { background: linear-gradient(125deg, hsl(194 92% 70%), hsl(274 86% 76%) 55%, hsl(325 79% 72%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* .arc-focus keeps a visible outline for KEYBOARD nav on buttons/links (real
+   a11y need) -- but text inputs never get the harsh blue browser-default ring
+   Danny flagged; they get a soft border-color shift instead (see
+   .arc-composer-pill / textarea rules below). */
 .arc-focus:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
+textarea, input { outline: none !important; -webkit-tap-highlight-color: transparent; }
 .arc-transition { transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, opacity .2s ease; }
 .arc-chat-page { background: linear-gradient(180deg, hsl(230 44% 8% / .18), transparent 26%); }
 .arc-chat-scroll { overscroll-behavior: contain; }
 .arc-composer-dock {
   background: linear-gradient(180deg, transparent, hsl(230 44% 8% / .96) 26%);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
 }
-.arc-composer { -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+/* the Gemini-style single pill: rounded-full, border-color is the ONLY focus
+   affordance (no outline, no box-shadow ring) -- matches the reference shots */
+.arc-composer-pill { transition: border-color 160ms ease, background-color 160ms ease; }
+.arc-composer-pill:focus-within { border-color: hsl(var(--accent) / 0.45); }
 [data-arc-theme="light"] body {
   background:
     radial-gradient(circle at 78% -12%, hsl(274 86% 63% / 0.10), transparent 34rem),
@@ -479,7 +489,7 @@
 @media (max-width: 767px) {
   .arc-shell { padding-bottom: env(safe-area-inset-bottom); }
   .arc-shell > .flex > header { padding-top: max(0.75rem, env(safe-area-inset-top)); }
-  .arc-chat-page { min-height: calc(100dvh - 4rem); }
+  .arc-chat-page { min-height: calc(var(--app-vh, 100dvh) - 4rem); }
   .arc-composer-dock { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
 }
 

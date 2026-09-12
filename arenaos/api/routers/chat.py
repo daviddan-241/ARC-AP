@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 import asyncio
 
 from arenaos.api.deps import get_current_user
-from arenaos.arena.base import MOODS
+from arenaos.arena.base import MOODS, mood_system_prelude
 from arenaos.engine.agent_loop import AgentStep, MaxStepsExceeded, run_agent_loop
 from arenaos.tools.base import ToolContext
 from arenaos.core.logging import get_logger
@@ -183,7 +183,7 @@ async def send_message(conversation_id: str, body: MessageBody,
             try:
                 result = await run_agent_loop(
                     goal=body.content, registry=tools, ctx=ctx, complete=complete_fn,
-                    mood_prelude=MOODS.get(body.mood, MOODS["uncensored"])["system_prelude"],
+                    mood_prelude=mood_system_prelude(body.mood),
                     on_step=on_step, history=history,
                 )
                 await queue.put({"kind": "__final__", "text": result["summary"]})

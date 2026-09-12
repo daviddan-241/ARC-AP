@@ -5,6 +5,7 @@ import {
   PlugZap, Settings2, WandSparkles, Workflow, X, Zap,
 } from "lucide-react";
 import { Link, Route, Switch, useLocation } from "wouter";
+import { useViewportHeight } from "./lib/useViewportHeight";
 import AuthGate from "./components/AuthGate";
 import BrowserOverlay from "./components/BrowserOverlay";
 import BrandMark from "./components/BrandMark";
@@ -76,7 +77,7 @@ function Shell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex h-[var(--app-vh,100dvh)] min-h-0 min-w-0 flex-1 flex-col">
         {/* mobile top bar */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[.07] bg-[#080b25]/70 px-4 backdrop-blur-xl md:hidden">
           <IconButton label="Open menu" onClick={() => setDrawer(true)}><Menu size={19} /></IconButton>
@@ -129,6 +130,7 @@ function Shell({ children }: { children: ReactNode }) {
 
 export default function App() {
   const [location] = useLocation();
+  useViewportHeight();
 
   // scroll to top on navigation
   useEffect(() => { document.querySelector("main")?.scrollTo({ top: 0 }); }, [location]);

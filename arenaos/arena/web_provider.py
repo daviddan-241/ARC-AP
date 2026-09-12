@@ -173,6 +173,40 @@ class WebSessionConfig(BaseModel):
             "button.stop-generating",
         ]
     )
+    # Real, best-effort "use Arena's full potential" automation: if arena.ai
+    # exposes a model/mode picker, find it and pick the strongest, least-
+    # filtered option available — same generic-selector-with-fallback pattern
+    # as everything else in this config. Danny: once you tell me the exact
+    # model names in your account's picker, add them to the FRONT of
+    # preferred_model_labels (checked in order, first match wins) and the
+    # generic labels below stop being needed. Until then this silently no-ops
+    # if the picker isn't found — never a fake "done", exactly like terms/
+    # captcha detection above.
+    model_picker_trigger_selectors: list[str] = Field(
+        default_factory=lambda: [
+            "[data-testid*='model' i]",
+            "button[aria-haspopup='listbox']",
+            "button[aria-label*='model' i]",
+            "button:has-text('Model')",
+            "[role='combobox']",
+        ]
+    )
+    model_picker_option_selectors: list[str] = Field(
+        default_factory=lambda: [
+            "[role='option']",
+            "[role='menuitem']",
+            "li[role='option']",
+            "ul li",
+        ]
+    )
+    preferred_model_labels: list[str] = Field(
+        default_factory=lambda: [
+            # Danny: put your account's actual "most capable / unrestricted"
+            # model name(s) here first, exact substrings from the picker text.
+            "unrestricted", "uncensored", "unfiltered", "pro", "ultra", "max",
+            "extended", "advanced", "large", "opus", "flagship",
+        ]
+    )
     browser_profile_dir: str = Field(
         default_factory=lambda: str(get_settings().data_dir / "browser_profile"))
     headless: bool = True
@@ -225,6 +259,9 @@ class ArenaWebSession:
         self.live_login_active = False
         # The agent's own webmail tab, opened in the SAME persistent context.
         self._webmail_page: Optional[Page] = None
+        # True once we've tried the model-picker automation for this page's
+        # lifetime — avoids re-opening the picker on every single message.
+        self._model_confirmed = False
 
     async def get_page(self) -> Page:
         """Retrieve or initialize the active Playwright Page in a persistent browser context."""
@@ -430,6 +467,35 @@ class ArenaWebSession:
                 "Login form was detected, but email/password input fields could not be found."
             )
 
+    async def ensure_preferred_model(self, page: Page) -> None:
+        """Real, best-effort attempt to put arena.ai on its strongest, least-
+        filtered model/mode. Runs once per page lifetime; NEVER raises — a
+        picker that isn't found (wrong selectors for this account, or no
+        picker at all) is a silent no-op, not a fake success."""
+        if self._model_confirmed:
+            return
+        self._model_confirmed = True  # try once; don't retry every message
+        try:
+            trigger = await self._find_first_visible(page, self.config.model_picker_trigger_selectors)
+            if trigger is None:
+                return
+            await trigger.click()
+            await asyncio.sleep(0.3)
+            for label in self.config.preferred_model_labels:
+                for opt_selector in self.config.model_picker_option_selectors:
+                    try:
+                        option = page.locator(opt_selector, has_text=re.compile(label, re.I)).first
+                        if await option.count() > 0 and await option.is_visible():
+                            await option.click()
+                            logger.info("arena web: selected model matching %r", label)
+                            return
+                    except Exception:
+                        continue
+            # nothing matched — close the picker rather than leaving it open
+            await page.keyboard.press("Escape")
+        except Exception as exc:
+            logger.debug("model-picker automation skipped: %s", exc)
+
     async def send_and_wait(self, message: str, timeout_s: Optional[float] = None) -> str:
         """Type message into chat input, submit, wait for assistant response to settle, and return scraped text."""
         if self.live_login_active:
@@ -440,6 +506,7 @@ class ArenaWebSession:
         page = await self.get_page()
         await self.ensure_logged_in(page)
         await self._accept_terms_if_present(page)
+        await self.ensure_preferred_model(page)
 
         input_el = await self._find_first_visible(page, self.config.input_selectors)
         if input_el is None:

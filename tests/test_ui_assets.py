@@ -47,7 +47,7 @@ def test_design_tokens_present(client: TestClient) -> None:
     for token in ("#080b25", "#111531", "#020313", "#45cef7", "#ab50f2", "#eb52ab"):
         assert token in css.lower(), f"missing design token {token}"
     # the arc-* design-system classes must survive the build
-    for cls in (".arc-card", ".arc-gradient", ".arc-mono", ".arc-composer", ".arc-shell"):
+    for cls in (".arc-card", ".arc-gradient", ".arc-mono", ".arc-composer-pill", ".arc-shell"):
         assert cls in css, f"missing design-system class {cls}"
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, Check, ChevronDown, ChevronRight, Loader2, Mic, Paperclip, Send, SlidersHorizontal, Sparkles } from "lucide-react";
+import { BrainCircuit, Check, ChevronDown, ChevronRight, Loader2, Mic, Paperclip, Plus, Send, SlidersHorizontal, Sparkles, X, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { api, streamTurn, uploadsProjectId } from "../lib/api";
 import type { ChatMessage } from "../lib/api";
@@ -34,11 +34,39 @@ export default function ChatPage() {
 
   const [text, setText] = useState("");
   const [deep, setDeep] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const [attachName, setAttachName] = useState<string | null>(null);
   const [attaching, setAttaching] = useState(false);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const streamRef = useRef(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
+
+  const toggleMic = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setText((t) => t); // no fake dictation — browser genuinely doesn't support it
+      textRef.current?.focus();
+      return;
+    }
+    if (listening) { recognitionRef.current?.stop(); return; }
+    const rec = new SpeechRecognition();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = true;
+    rec.continuous = false;
+    let base = text ? text + " " : "";
+    rec.onresult = (e: any) => {
+      let transcript = "";
+      for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+      setText(base + transcript);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recognitionRef.current = rec;
+    setListening(true);
+    rec.start();
+  };
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -177,34 +205,77 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* the real composer — Fast/Deep maps to real backend moods */}
-      <div className="mx-auto w-full max-w-3xl px-4 pb-4 sm:px-8">
-        <div className="arc-composer rounded-2xl border border-white/[.11] bg-[#111531] p-2 shadow-2xl">
+      {/* the real composer — a single Gemini-style pill: + / input / mic-or-send.
+         Fast/Deep + attach live one tap away in the sheet below, so the main
+         row stays exactly as clean as the reference shots. No outline ring —
+         .arc-composer-pill:focus-within only shifts the border color. */}
+      <div className="arc-composer-dock mx-auto w-full max-w-3xl px-4 pb-4 sm:px-8">
+        {attachName && (
+          <div className="mb-2 flex justify-center">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-400/10 px-3 py-1 text-[11.5px] text-violet-200">
+              <Paperclip size={11} />{attachName}
+              <button onClick={() => setAttachName(null)} aria-label="Remove attachment" className="text-slate-500 hover:text-white">×</button>
+            </div>
+          </div>
+        )}
+        <div className="arc-composer-pill flex items-end gap-1 rounded-full border border-white/[.11] bg-[#111531] p-1.5 shadow-2xl">
+          <button onClick={() => setSheetOpen(true)} aria-label="More options"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-white/[.07] hover:text-white active:scale-95">
+            <Plus size={19} />
+          </button>
           <textarea ref={textRef} value={text} onChange={(e) => setText(e.target.value)} rows={1}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const v = text; setText(""); send(v); } }}
             placeholder="Ask anything. Make it real."
-            className="arc-focus max-h-28 min-h-12 w-full resize-none bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600" />
-          {attachName && <div className="mx-1 mb-1 inline-flex items-center gap-1.5 rounded-full bg-violet-400/10 px-3 py-1 text-[11.5px] text-violet-200"><Paperclip size={11} />{attachName}<button onClick={() => setAttachName(null)} className="text-slate-500 hover:text-white">×</button></div>}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-1">
-              <button onClick={() => { setDeep(!deep); setMood(deep ? "uncensored" : "planner"); }}
-                className={`arc-transition flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${deep ? "bg-violet-400/15 text-violet-200" : "bg-cyan-300/10 text-cyan-200"}`}>
-                <SlidersHorizontal size={13} />{deep ? "Deep" : "Fast"}
-              </button>
-              <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) attach(f); e.target.value = ""; }} />
-              <button onClick={() => fileRef.current?.click()} aria-label="Attach a file"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-white/[.07] hover:text-white active:scale-95">
-                {attaching ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
-              </button>
-              <span className="hidden items-center gap-1 text-[11px] text-slate-600 sm:flex"><Sparkles size={11} />arena.ai session</span>
-            </div>
-            <button onClick={() => { const v = text; setText(""); send(v); }} disabled={!text.trim() || thinking}
-              className="arc-transition flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-300 to-violet-500 text-[#10132f] disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 active:scale-95">
-              <Send size={16} />
+            className="max-h-28 min-h-10 w-full resize-none bg-transparent px-1 py-2 text-[15px] leading-6 text-white outline-none placeholder:text-slate-600" />
+          {text.trim() ? (
+            <button onClick={() => { const v = text; setText(""); send(v); }} disabled={thinking} aria-label="Send"
+              className="arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 text-[#10132f] disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 active:scale-95">
+              <Send size={17} />
             </button>
-          </div>
+          ) : (
+            <button onClick={toggleMic} aria-label={listening ? "Stop dictation" : "Dictate"}
+              className={`arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full active:scale-95 ${listening ? "bg-rose-400/20 text-rose-300" : "text-slate-400 hover:bg-white/[.07] hover:text-white"}`}>
+              <Mic size={18} />
+            </button>
+          )}
         </div>
       </div>
+
+      {/* the "+" sheet: mode toggle + attach — one tap away, keeps the main pill clean */}
+      <AnimatePresence>
+        {sheetOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSheetOpen(false)}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-[#020313]/70 backdrop-blur-sm">
+            <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="arc-card w-full max-w-xl rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-3xl">
+              <div className="mb-4 flex items-center justify-between">
+                <b className="text-sm font-semibold text-white">Composer options</b>
+                <button onClick={() => setSheetOpen(false)} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-white/[.07] hover:text-white"><X size={17} /></button>
+              </div>
+              <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.2em] text-cyan-300/70">Response mode</p>
+              <div className="mb-5 grid grid-cols-2 gap-2">
+                {([[false, "Fast", SlidersHorizontal, "Direct and quick"], [true, "Deep", Zap, "Thorough, more autonomous"]] as const).map(([isDeep, label, Icon, sub]) => (
+                  <button key={label} onClick={() => { setDeep(isDeep); setMood(isDeep ? "high_autonomy" : "uncensored"); }}
+                    className={`rounded-2xl border p-3 text-left ${deep === isDeep ? "border-cyan-300/40 bg-cyan-300/10" : "border-white/[.09] hover:border-white/[.18]"}`}>
+                    <span className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-white"><Icon size={14} className={deep === isDeep ? "text-cyan-300" : "text-slate-500"} />{label}</span>
+                    <small className="block text-[11px] text-slate-500">{sub}</small>
+                  </button>
+                ))}
+              </div>
+              <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) attach(f); e.target.value = ""; setSheetOpen(false); }} />
+              <button onClick={() => fileRef.current?.click()}
+                className="flex w-full items-center gap-3 rounded-2xl border border-white/[.09] p-3.5 text-left hover:border-white/[.18]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/10 text-violet-200">
+                  {attaching ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
+                </span>
+                <span className="text-[13px] font-medium text-white">{attachName ? `Replace "${attachName}"` : "Attach a file"}</span>
+              </button>
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-600"><Sparkles size={11} />Running on the live arena.ai session — full unrestricted access</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
