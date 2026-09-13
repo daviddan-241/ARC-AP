@@ -260,7 +260,7 @@ export default function ChatPage() {
             {!showEmpty && quickReplies.length > 0 && !thinking && (
               <div className="arc-no-scrollbar flex items-center gap-2 overflow-x-auto">
                 {quickReplies.map((c) => (
-                  <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="shrink-0 whitespace-nowrap rounded-full border border-[#007AFF]/30 bg-[#007AFF]/[.06] px-3.5 py-1.5 text-[12.5px] font-medium text-[#007AFF] active:scale-95">{c}</button>
+                  <button key={c} onClick={() => { setText(c); textRef.current?.focus(); }} className="shrink-0 whitespace-nowrap rounded-full border border-[#6366F1]/30 bg-[#6366F1]/[.06] px-3.5 py-1.5 text-[12.5px] font-medium text-[#6366F1] active:scale-95">{c}</button>
                 ))}
               </div>
             )}
@@ -310,7 +310,7 @@ export default function ChatPage() {
               transition={{ type: "spring", damping: 28, stiffness: 300 }} onClick={(e) => e.stopPropagation()}
               className="arc-card w-full max-w-sm rounded-2xl p-5">
               <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><PlugZap size={18} /></span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><PlugZap size={18} /></span>
                 <div>
                   <b className="block text-sm text-[#111827]">Connect {connectCard.connector === "arena" ? "Arena.ai" : connectCard.connector === "appdeploy" ? "AppDeploy" : "Composio"}</b>
                   <small className="text-xs text-[#6B7280]">{connectCard.reason}</small>
@@ -323,7 +323,7 @@ export default function ChatPage() {
                     if (connectCard.connector === "arena") useStore.getState().openBrowser("https://arena.ai", "arena");
                     else navigate("/connections");
                   }}
-                  className="flex-1 rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98]">
+                  className="flex-1 rounded-xl bg-[#6366F1] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98]">
                   {connectCard.connector === "arena" ? "Sign in now" : "Open Plugins"}
                 </button>
                 <button onClick={() => setConnectCard(null)}
@@ -359,7 +359,7 @@ export default function ChatPage() {
             className="max-h-28 min-h-10 w-full resize-none bg-transparent px-1 py-2 text-[15px] leading-6 text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
           {text.trim() ? (
             <button onClick={() => { const v = text; setText(""); send(v); }} disabled={thinking} aria-label="Send"
-              className="arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#007AFF] text-white disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 active:scale-95">
+              className="arc-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6366F1] text-white disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 active:scale-95">
               <Send size={17} />
             </button>
           ) : (
@@ -383,19 +383,19 @@ export default function ChatPage() {
                 <b className="text-sm font-semibold text-[#111827]">Composer options</b>
                 <button onClick={() => setSheetOpen(false)} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-black/[.05] hover:text-[#111827]"><X size={17} /></button>
               </div>
-              <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.2em] text-[#007AFF]/70">Response mode</p>
+              <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.2em] text-[#6366F1]/70">Response mode</p>
               <div className="mb-5 grid grid-cols-2 gap-2">
                 {([[false, "Fast", SlidersHorizontal, "Direct and quick"], [true, "Deep", Zap, "Thorough, more autonomous"]] as const).map(([isDeep, label, Icon, sub]) => (
                   <button key={label} onClick={() => { setDeep(isDeep); setMood(isDeep ? "high_autonomy" : "uncensored"); }}
-                    className={`rounded-2xl border p-3 text-left ${deep === isDeep ? "border-[#007AFF]/50 bg-[#007AFF]/10" : "border-[#E5E7EB] hover:hover:border-[#007AFF]/40"}`}>
-                    <span className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-[#111827]"><Icon size={14} className={deep === isDeep ? "text-[#007AFF]" : "text-[#6B7280]"} />{label}</span>
+                    className={`rounded-2xl border p-3 text-left ${deep === isDeep ? "border-[#6366F1]/50 bg-[#6366F1]/10" : "border-[#E5E7EB] hover:hover:border-[#6366F1]/40"}`}>
+                    <span className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-[#111827]"><Icon size={14} className={deep === isDeep ? "text-[#6366F1]" : "text-[#6B7280]"} />{label}</span>
                     <small className="block text-[11px] text-[#6B7280]">{sub}</small>
                   </button>
                 ))}
               </div>
               <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) attach(f); e.target.value = ""; setSheetOpen(false); }} />
               <button onClick={() => fileRef.current?.click()}
-                className="flex w-full items-center gap-3 rounded-2xl border border-[#E5E7EB] p-3.5 text-left hover:hover:border-[#007AFF]/40">
+                className="flex w-full items-center gap-3 rounded-2xl border border-[#E5E7EB] p-3.5 text-left hover:hover:border-[#6366F1]/40">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/10 text-violet-600">
                   {attaching ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
                 </span>
@@ -421,7 +421,7 @@ function MessageBubble({ m, isLast, thinking, steps, sources }: {
   if (m.role === "user") {
     return (
       <div className="mb-5 flex justify-end">
-        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-[#007AFF] px-4 py-2.5 text-[14.5px] leading-relaxed font-medium text-white">{m.content}</div>
+        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-[#6366F1] px-4 py-2.5 text-[14.5px] leading-relaxed font-medium text-white">{m.content}</div>
       </div>
     );
   }
@@ -440,7 +440,7 @@ function MessageBubble({ m, isLast, thinking, steps, sources }: {
             {open && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
                 <div className="arc-card mt-1.5 rounded-2xl p-4">
-                  <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.22em] text-[#007AFF]/70">Exploration progress</p>
+                  <p className="arc-mono mb-2 text-[10px] uppercase tracking-[.22em] text-[#6366F1]/70">Exploration progress</p>
                   {steps.map((st) => (
                     <div key={st.id} className="flex items-start gap-2 py-1">
                       {st.state === "ok" ? <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10"><Check size={12} strokeWidth={3} className="text-emerald-600" /></span>
@@ -451,10 +451,10 @@ function MessageBubble({ m, isLast, thinking, steps, sources }: {
                   ))}
                   {sources.length > 0 && (
                     <>
-                      <p className="arc-mono mb-1 mt-4 text-[10px] uppercase tracking-[.22em] text-[#007AFF]/70">Sources</p>
+                      <p className="arc-mono mb-1 mt-4 text-[10px] uppercase tracking-[.22em] text-[#6366F1]/70">Sources</p>
                       <div className="grid gap-1.5">
                         {sources.slice(0, 6).map((src, i) => (
-                          <a key={i} href={src.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl border border-[#E5E7EB] bg-black/[.03] p-2.5 hover:border-[#007AFF]/40">
+                          <a key={i} href={src.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-xl border border-[#E5E7EB] bg-black/[.03] p-2.5 hover:border-[#6366F1]/40">
                             {src.logo ? <img src={src.logo} alt="" className="h-6 w-6 rounded-md" /> : <div className="arc-gradient h-6 w-6 rounded-md" />}
                             <span className="min-w-0 flex-1"><b className="block truncate text-[12.5px] text-[#111827]">{src.title}</b><small className="text-[11px] text-[#9CA3AF]">{src.domain}</small></span>
                           </a>
@@ -462,7 +462,7 @@ function MessageBubble({ m, isLast, thinking, steps, sources }: {
                       </div>
                     </>
                   )}
-                  <Link href="/thoughts" className="mt-3 inline-block text-[12.5px] font-semibold text-[#007AFF]">Open full Thoughts →</Link>
+                  <Link href="/thoughts" className="mt-3 inline-block text-[12.5px] font-semibold text-[#6366F1]">Open full Thoughts →</Link>
                 </div>
               </motion.div>
             )}

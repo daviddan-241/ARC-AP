@@ -27,7 +27,11 @@ async def ws_arena_login(websocket: WebSocket) -> None:
         return
 
     provider = getattr(websocket.app.state, "provider", None)
-    session = getattr(provider, "web_session", None) if provider else None
+    # REAL BUG THIS FIXES: ArenaWebSessionProvider exposes its session as
+    # `.session` (an ArenaWebSession) — `.web_session` never existed, so this
+    # was ALWAYS None and the Arena/Mail overlay tabs ALWAYS showed the
+    # "transport isn't running" error even when Chromium worked perfectly.
+    session = getattr(provider, "session", None) if provider else None
     page_id = websocket.query_params.get("page", "arena")
     target_url = websocket.query_params.get("url")
 

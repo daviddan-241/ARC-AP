@@ -5,7 +5,8 @@ import { useStore } from "../lib/store";
 type WSMsg =
   | { type: "frame"; data: string }
   | { type: "url"; url: string }
-  | { type: "error"; error: string };
+  | { type: "error"; error: string }
+  | { type: "status"; status: string };
 
 const FW = 480;
 const FH = 854;
@@ -25,6 +26,7 @@ export default function BrowserOverlay() {
   const [expanded, setExpanded] = useState(false);
   const [addr, setAddr] = useState("");
   const [connected, setConnected] = useState(false);
+  const [waking, setWaking] = useState(false);
   const [error, setError] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -54,7 +56,8 @@ export default function BrowserOverlay() {
     ws.onopen = () => setConnected(true);
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data) as WSMsg;
-      if (msg.type === "frame") { gotFrame = true; setError(""); setFrame(msg.data); }
+      if (msg.type === "status") setWaking(true); // server accepted; Chromium cold-launch in progress
+      else if (msg.type === "frame") { gotFrame = true; setWaking(false); setError(""); setFrame(msg.data); }
       else if (msg.type === "url") setAddr(msg.url.replace(/^https?:\/\//, ""));
       else if (msg.type === "error") setError(msg.error);
     };
@@ -136,7 +139,7 @@ export default function BrowserOverlay() {
             <p className="max-w-sm text-[14px] leading-relaxed text-[#374151]">{error}</p>
             <div className="flex gap-2">
               <button onClick={() => { setError(""); const u = targetUrl; useStore.getState().closeBrowser(); setTimeout(() => useStore.getState().openBrowser(u), 50); }
-              } className="rounded-full bg-[#007AFF] px-5 py-2.5 text-[13px] font-bold text-white active:scale-95">Retry</button>
+              } className="rounded-full bg-[#6366F1] px-5 py-2.5 text-[13px] font-bold text-white active:scale-95">Retry</button>
               <button onClick={closeBrowser} className="rounded-full border border-[#E5E7EB] px-5 py-2.5 text-[13px] font-semibold text-[#374151] hover:text-[#111827]">Close</button>
             </div>
           </div>
@@ -152,7 +155,7 @@ export default function BrowserOverlay() {
         ) : (
           !error && <div className="flex flex-col items-center gap-3 text-[14px] text-[#6B7280]">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-cyan-300" />
-            Loading {page === "webmail" ? "the agent's mail" : targetUrl.replace(/^https?:\/\//, "")}…
+            {waking ? "Waking up the server browser — first launch can take up to a minute…" : <>Loading {page === "webmail" ? "the agent's mail" : targetUrl.replace(/^https?:\/\//, "")}…</>}
           </div>
         )}
         {/* mobile keyboards: hidden input forwards keystrokes into the page */}

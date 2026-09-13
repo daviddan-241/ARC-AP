@@ -51,11 +51,11 @@ export default function ProjectsPage() {
       <div className="arc-card mb-5 rounded-3xl p-4 sm:p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New project name…"
-            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#007AFF]/50" />
+            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#6366F1]/50" />
           <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Description (optional)"
-            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#007AFF]/50" />
+            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#6366F1]/50" />
           <button onClick={create} disabled={creating || !name.trim()}
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98] disabled:opacity-40">
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#6366F1] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98] disabled:opacity-40">
             {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}New project
           </button>
         </div>

@@ -59,7 +59,7 @@ export default function ChatHistory({ onNavigate }: { onNavigate?: () => void })
     <div className="min-w-0">
       {/* real search over your actual chat titles -- client-side filter of
          the same list already loaded, not a decorative icon */}
-      <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3 py-2 focus-within:border-[#007AFF]/40">
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3 py-2 focus-within:border-[#6366F1]/40">
         <Search size={14} className="shrink-0 text-[#6B7280]" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search chats"
           className="w-full bg-transparent text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF]" />

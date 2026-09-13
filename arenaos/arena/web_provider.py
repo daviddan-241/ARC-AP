@@ -20,7 +20,7 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, AsyncIterator, Callable, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -71,6 +71,9 @@ logger = logging.getLogger(__name__)
 #   5. login_url / chat_url: Specific URLs for logging in and chatting on arena.ai.
 # ==============================================================================
 
+
+if TYPE_CHECKING:  # shared-browser wiring only; no runtime import cycle
+    from arenaos.browser.session import PersistentBrowser
 
 from arenaos.email.webmail import (
     CODE_INPUT_SELECTORS,
@@ -246,9 +249,18 @@ class ArenaWebSession:
         self,
         config: WebSessionConfig,
         get_credential: Optional[Callable[[str], Optional[str]]] = None,
+        browser: Optional["PersistentBrowser"] = None,
     ) -> None:
+        """`browser`: the app's shared PersistentBrowser. When given, this
+        session uses ITS Chromium context (one process for the whole app —
+        the arena page, webmail tab, and operator free-browsing all live in
+        ONE launch). That halves RAM vs. the old two-launch setup (critical
+        on the 512MB Render free tier — two Chromium processes were the
+        OOM-kill that wiped the logged-in arena session on restart) and the
+        arena.ai login persists in the same profile the live view drives."""
         self.config = config
         self.get_credential = get_credential
+        self.browser = browser
         self._playwright: Optional[Playwright] = None
         self._context: Optional[BrowserContext] = None
         self._page: Optional[Page] = None
@@ -267,6 +279,14 @@ class ArenaWebSession:
         """Retrieve or initialize the active Playwright Page in a persistent browser context."""
         async with self._lock:
             if self._page is not None and not self._page.is_closed():
+                return self._page
+
+            if self.browser is not None:
+                # Shared Chromium: the named "arena" page IS the model tab and
+                # the live-login view tab — one process, one profile, logins
+                # survive restarts because the profile dir is never reaped.
+                self._page = await self.browser.get_page("arena")
+                self._context = self._page.context
                 return self._page
 
             if async_playwright is None:
@@ -303,6 +323,10 @@ class ArenaWebSession:
     async def webmail_page(self) -> Page:
         """The agent's own email tab — same profile as arena.ai, so the ONE
         webmail login done via the in-app browser works for everything."""
+        if self.browser is not None:
+            # Shared Chromium: the named "webmail" tab stays alive between
+            # sessions in the one persistent profile.
+            return await self.browser.get_page("webmail")
         await self.get_page()  # ensures the persistent context is launched
         assert self._context is not None
         if self._webmail_page is None or self._webmail_page.is_closed():
@@ -647,7 +671,14 @@ class ArenaWebSession:
             return "[Unable to read page body]"
 
     async def close(self) -> None:
-        """Close page, persistent context, and Playwright process cleanly."""
+        """Close page, persistent context, and Playwright process cleanly.
+
+        With a shared PersistentBrowser this is a no-op: the browser owns
+        the context/pages and must outlive this session (the arena login
+        lives in its profile) — only the standalone path tears down.
+        """
+        if self.browser is not None:
+            return
         async with self._lock:
             if self._page and not self._page.is_closed():
                 try:
@@ -678,10 +709,12 @@ class ArenaWebSessionProvider(ArenaProvider):
         self,
         config: Optional[WebSessionConfig] = None,
         get_credential: Optional[Callable[[str], Optional[str]]] = None,
+        browser: Optional["PersistentBrowser"] = None,
     ) -> None:
         self.config = config or WebSessionConfig()
         self.get_credential = get_credential
-        self.session = ArenaWebSession(self.config, get_credential=self.get_credential)
+        self.session = ArenaWebSession(self.config, get_credential=self.get_credential,
+                                       browser=browser)
 
     def _build_prompt(self, messages: Sequence[ChatMessage]) -> str:
         """Extract or compose the user prompt string from chat message history."""

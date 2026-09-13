@@ -52,7 +52,7 @@ export default function AutomationsPage() {
           className="arc-focus w-full resize-none rounded-xl border border-[#E5E7EB] bg-black/[.03] p-3 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
         <div className="mt-3 flex justify-end">
           <button onClick={() => create(goal)} disabled={busy || !goal.trim()}
-            className="flex items-center gap-2 rounded-xl bg-[#007AFF] px-5 py-2.5 text-xs font-bold text-white disabled:opacity-40 active:scale-[.98]">
+            className="flex items-center gap-2 rounded-xl bg-[#6366F1] px-5 py-2.5 text-xs font-bold text-white disabled:opacity-40 active:scale-[.98]">
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}Create &amp; run
           </button>
         </div>
@@ -60,11 +60,11 @@ export default function AutomationsPage() {
 
       {/* money runs — real autonomous tasks with money goals */}
       <div className="mb-8">
-        <div className="mb-3 flex items-center gap-2"><Wallet size={15} className="text-[#007AFF]" /><h2 className="text-sm font-semibold text-[#111827]">Money runs</h2></div>
+        <div className="mb-3 flex items-center gap-2"><Wallet size={15} className="text-[#6366F1]" /><h2 className="text-sm font-semibold text-[#111827]">Money runs</h2></div>
         <p className="mb-3 text-xs text-[#9CA3AF]">One tap starts a real autonomous task — the agent searches, builds, and reports actual opportunities.</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {MONEY_RUNS.map((r) => (
-            <button key={r.label} onClick={() => create(r.goal)} className="arc-card rounded-2xl p-4 text-left hover:border-[#007AFF]/40 active:scale-[.99]">
+            <button key={r.label} onClick={() => create(r.goal)} className="arc-card rounded-2xl p-4 text-left hover:border-[#6366F1]/40 active:scale-[.99]">
               <span className="arc-gradient mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl text-[#111827]"><Wallet size={15} /></span>
               <b className="block text-[13px] font-semibold text-[#111827]">{r.label}</b>
               <small className="mt-1 block text-[11px] leading-4 text-[#9CA3AF]">Autonomous · uses real web search + build tools</small>
@@ -93,7 +93,7 @@ export default function AutomationsPage() {
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="arc-mono text-[10.5px] uppercase tracking-[.15em] text-[#9CA3AF]">{t.task_type ?? "goal"}{t.created_at ? ` · ${new Date(t.created_at).toLocaleDateString()}` : ""}</span>
               <span className="flex-1" />
-              {t.status === "blocked_on_permission" && <button onClick={() => act(t.id, "approve")} className="rounded-full border border-[#007AFF]/40 px-3 py-1.5 text-[12px] font-semibold text-[#007AFF]">Approve</button>}
+              {t.status === "blocked_on_permission" && <button onClick={() => act(t.id, "approve")} className="rounded-full border border-[#6366F1]/40 px-3 py-1.5 text-[12px] font-semibold text-[#6366F1]">Approve</button>}
               {(t.status === "failed" || t.status === "waiting_retry") && <button onClick={() => act(t.id, "resume")} className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px] font-medium text-[#374151]">Resume</button>}
               {t.status === "active" && <button onClick={() => act(t.id, "cancel")} className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px] font-medium text-[#374151]">Cancel</button>}
             </div>
@@ -111,7 +111,7 @@ export default function AutomationsPage() {
             { label: "Open the agent's email — sign in once", icon: Mail, act: () => openBrowser("https://mail.google.com", "webmail") },
           ].map(({ label, icon: Icon, act }) => (
             <button key={label} onClick={act} className="flex w-full items-center gap-3 border-b border-[#E5E7EB] p-4 text-left last:border-b-0 hover:bg-black/[.03]">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><Icon size={16} /></span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><Icon size={16} /></span>
               <span className="flex-1 text-[13.5px] font-medium text-[#111827]">{label}</span>
               <Plus size={15} className="text-[#9CA3AF]" />
             </button>

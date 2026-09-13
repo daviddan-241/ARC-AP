@@ -129,7 +129,7 @@ def test_manifest_and_icons_served(client):
     r = client.get("/manifest.json")
     assert r.status_code == 200
     m = r.json()
-    assert m["name"] == "ARC" and m["theme_color"] == "#FFFFFF"
+    assert m["name"] == "ARC" and m["theme_color"] == "#6366F1"
     r = client.get("/assets/icons/icon-192.png")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("image/png")

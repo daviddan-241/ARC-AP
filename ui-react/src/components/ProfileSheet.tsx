@@ -35,14 +35,14 @@ export default function ProfileSheet({ onClose }: { onClose: () => void }) {
   return (
     <div className="min-w-0">
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#007AFF] text-lg font-bold text-white">DO</span>
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#6366F1] text-lg font-bold text-white">DO</span>
         <div><b className="block text-base text-[#111827]">Danny Op</b><small className="text-xs text-[#6B7280]">Operator</small></div>
       </div>
 
       <p className="arc-mono mb-2 px-1 text-[10px] uppercase tracking-[.22em] text-[#9CA3AF]">Live sessions</p>
       <div className="arc-card mb-4 overflow-hidden rounded-2xl">
         <div className="flex items-center gap-3 border-b border-[#E5E7EB] p-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><Globe size={16} /></span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><Globe size={16} /></span>
           <span className="flex-1 text-[13.5px] text-[#111827]">arena.ai</span>
           {arenaReady ? <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><CheckCircle2 size={12} />Live</span>
             : <span className="text-[11px] text-amber-600">{status?.arena_session_status?.status ?? "…"}</span>}

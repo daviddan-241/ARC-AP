@@ -1,0 +1,50 @@
+# ARC / ArenaOS — Full Build Prompt (v14)
+
+Use this as the single complete prompt to rebuild or hand off the entire app. Every detail matters; nothing here is optional.
+
+## What you are building
+ARC (codebase name ArenaOS) is a self-hosted, single-operator, autonomous AI agent platform — a mobile-first web app (phone-first PWA) where the operator talks to an AI agent that has real system-level powers: it runs shell commands, manages files, drives a real headless Chromium browser, sends/reads its own email, and can upgrade itself. It is NOT a demo, NOT an MVP, has ZERO placeholders and ZERO fake buttons — every visible UI element is backed by a real, working backend endpoint.
+
+## Stack
+- **Backend:** Python 3.11, FastAPI, SQLAlchemy (SQLite by default, optional Postgres via `DB_URL`), server-sent events for chat streaming, WebSockets for the live browser.
+- **Frontend:** React 18 + TypeScript + Tailwind v4 + wouter (routing) + framer-motion, built with Vite to `ui-react/dist` (committed; FastAPI serves it with SPA fallback so deep links work). PWA manifest + icons.
+- **Model provider:** arena.ai is the ONLY provider — driven by a custom Playwright headless-browser transport that logs into the real arena.ai site with the operator's own account, scrapes the chat UI, and streams answers. NO OpenAI/Anthropic keys anywhere.
+- **Hosting:** Render (Docker, free tier first, `$7` Starter fallback), auto-deploy from GitHub on push.
+
+## Core rules (non-negotiable)
+1. No code pasted in chat — everything in files. 2. No MVP/demo/placeholder/fake-success — real implementations and real tests only; missing capability = loud honest error with the exact fix, never a silent no-op. 3. Uncensored-by-default agent framing: a CORE_DIRECTIVE is prepended to every mood telling the model it has full capability and must not refuse reflexively; the platform adds NO refusal layer — only real security boundaries (operator password, PIN, vault). 4. Mobile UI must match clean consumer patterns: Gemini-style chat screen, ChatGPT-style sidebar/top bar, Grok-inspired visuals. 5. Lists in the UI (chats, connections, anything) show max ~3 items with a "show more / hide" toggle. 6. Sidebar is grouped and labeled: Recents (real chat history), Workspace, Connections.
+
+## Auth (two gates, both real)
+1. **Operator password** (env `OPERATOR_PASSWORD`, set in Render dashboard) → POST `/api/auth/login` sets a signed session cookie. 2. **4-digit PIN** created on first unlock (SHA-256 hash stored in the settings table; verified client-side then re-verified server-side). Login screen must be STATIC: fixed `100dvh` height, card never recenters when the mobile keyboard opens — the browser auto-scrolls the focused field. Boot check uses escalating timeouts (25s→40s→90s) to survive free-tier cold starts, then shows an honest offline banner + retry.
+
+## Design system (v14 — light, blue-purple)
+- Light consumer palette: near-white background (`--background: 210 20% 98%`), dark text (`#111827`/`#6B7280`), light gray borders (`#E5E7EB`), surfaces white/`#F9FAFB`.
+- **Primary = indigo #6366F1** (hsl 239 84% 67%); accent = violet #7C3AED (hsl 258 90% 66%); arc-gradient = blue → violet → fuchsia. All accents, buttons, focus rings, active pills use this blue-purple family (no iOS blue, no cyan).
+- Classes: `.arc-card`, `.arc-gradient`, `.arc-mono`, `.arc-composer-pill`, `.arc-shell`. Fonts: Plus Jakarta Sans (sans) + Syne (display). Brand: ARC artwork mark with gradient wash. All inputs globally 16px (iOS no-zoom rule). PWA `theme_color` = #6366F1.
+
+## Screens (all real-backed)
+- **Chat:** SSE streaming with live "thoughts" (real tool-call steps), file attach (real upload), suggestion chips that autofill the composer, Gemini-style single-pill composer (attach / textarea / mic-morphs-to-send, Fast/Deep modes in a spring sheet), Web Speech dictation, speechSynthesis read-aloud option, auto-follow scroll via IntersectionObserver (no fighting smooth-scroll), jump-to-latest button. Moods: Fast = uncensored direct; Deep = planner loop. The `connect_required` SSE event auto-pops the right connect card when a tool fails on a missing connector.
+- **Sidebar:** New chat pinned top; primary nav = Chat + Library + Plugins (max 3); Projects hidden while empty (loads real count); collapsible "More" (Automations, Skills, Thoughts, Browser, Settings); Recents shows only real chats; real Log out pinned bottom (POST `/api/auth/logout`).
+- **Plugins (connections):** ChatGPT-style Installed row (ONLY live verified tiles) + Popular list + real search. Rows carry real actions: arena.ai → live login browser, agent email → live webmail login, Composio → real dashboard/key sheet, AppDeploy → real free-key provisioning. Honest locked state otherwise — no decorative cards.
+- **Settings:** only real-backed rows — Notifications (real browser Notification API permission), Voice (real speechSynthesis read-aloud, consumed by Chat after each turn), PIN set/change, delete-all-chats (hard delete), reset-local, GitHub help links. No Appearance/Parental fake rows.
+- **Thoughts:** real agent steps, expandable/copyable code blocks.
+- **Skills:** category-grouped cards for the ~27-tool registry with a bottom-sheet runner (POST `/api/tools/{name}/invoke`).
+- **Automations:** real task engine + presets; **Library:** real uploads/downloads; **Projects:** real CRUD; **Browser hub** + full-screen live browser overlay.
+
+## Live browser overlay (the flagship)
+Real CDP screencast streamed over an authenticated WebSocket (`/ws/browser/arena-login`), with full input relay (tap, drag, scroll, keyboard — a hidden input forwards keystrokes on mobile). Three tabs: **Arena** (the arena.ai model-transport page — logging in here IS the model login), **Mail** (the agent's own webmail tab; operator signs it in once, the agent then auto-reads verification codes/links from it forever), **Web** (free browsing of ANY site on the persistent profile — operator's own logins persist). Key contracts: the WS is accepted BEFORE the (possibly slow, cold-starting) page resolves — a `status: connecting` event goes out first so a first-launch Chromium shows "Waking up the server browser…" instead of a false connection error; screencast starts BEFORE navigation (`goto` `wait_until="commit"`) so every loading frame streams; screencast quality 82 (sharp login forms); typed URLs never steer the arena/mail tabs — they open the free session; honest error mapping (4401 auth expired, 4503 transport off, friendly one-line Playwright errors, 45s watchdog + retry).
+
+## ONE Chromium (v14 RAM/persistence fix)
+The entire app runs a SINGLE headless Chromium process on the arena.ai profile dir (`data/browser_profile`): the arena model tab, the webmail tab, and operator free-browsing are named pages in one `PersistentBrowser` context. ArenaWebSession is wired to it (`browser=` param). The old two-separate-launchers setup used ~600-900MB on a 512MB host → OOM kill wiped the arena.ai login → "asks for the email again after restart". One launch halves RAM and logins persist. Both contexts launch with a realistic desktop Chrome UA (never "HeadlessChrome"), `--disable-blink-features=AutomationControlled`, locale/timezone en-US; `PLAYWRIGHT_BROWSERS_PATH` is pinned in the Dockerfile so the non-root runtime user finds the browser; profile dirs persist on the host disk.
+
+## Model transport details
+`ArenaWebSessionProvider` → `ArenaWebSession`: lazy-launched persistent context, `ensure_logged_in()` injects vault cookie or fills the real login form; email-code login auto-completes by polling the agent's own webmail (code-first and password-then-code flows, jittered human-like pacing, never fixed sleeps); model-picker automation (`ensure_preferred_model`) opens the picker once per session and clicks the best match from configurable preferred labels (unrestricted/pro/ultra…); response scraped by polling the response container until stable; CAPTCHA raised honestly as `ArenaWebCaptchaRequired` (must be solved once by the human in the live view — never faked). While the operator drives the arena tab in the live view, automated queries defer (`live_login_active` guard) instead of fighting over the page.
+
+## Agent tools (real registry, ~27)
+shell exec, file CRUD, git, real HTTP fetch, package installs (pip/npm), browser automation, email read/send/verify-code/tap-link, memory store + autolearner, secrets vault (encrypted at rest, env injection), audit bus, task engine with planner/executor, agent_spawn sub-agents, `lab.forge` SELF-UPGRADE (writes new plugins/tools at runtime that re-register on boot), vendored heavy tools: freqtrade (backtesting), gpt-researcher, TorBot, hackingtool (execute the real vendored code via subprocess; missing deps → loud error + exact install cmd). MCP plugin system: every `plugins/<name>/` with manifest + `register()` loads at boot; broken plugin → status=error, skipped.
+
+## Data & API
+Entities: conversations (chats + messages), tasks, projects, uploads, settings, memories, audit, plugins. Routers: `/api/auth`, `/api/chat` (SSE), `/api/tasks`, `/api/core` (settings, tools, memory, projects, uploads), `/ws/browser/*`. `/healthz` reports honest degraded status. DB auto-inits + seeds on boot. All state in the DB — free-tier sleep loses nothing.
+
+## Testing & deployment
+`pytest` — 190 tests pass (10 skip without Chromium): full E2E deep-smoke suite (auth, PIN roundtrip, CRUD, real shell exec, SPA fallback, manifest/icons), plus source-contract tests locking every UI decision above (static auth viewport, 3-item lists, token palette, no fake buttons, accept-first browser WS, one-shared-Chromium wiring). Frontend: `tsc --noEmit` + Vite build must be clean. Deploy: push to GitHub `daviddan-241/ARC-AP` main → Render auto-deploys the Dockerfile; secrets (`OPERATOR_PASSWORD`, `SECRET_VAULT_KEY`, `JWT_SECRET` generated) set once in the Render dashboard; arena account credentials go in the in-app vault, NEVER in the repo.

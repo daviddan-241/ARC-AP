@@ -49,6 +49,7 @@ def _build_arena_provider(app: FastAPI):
         provider = ArenaWebSessionProvider(
             WebSessionConfig(),
             get_credential=lambda name: _safe_credential(app, name),
+            browser=app.state.browser,  # shared Chromium — see create_app()
         )
         logger.info("arena web-session provider created (browser launches lazily)")
         return provider
@@ -130,7 +131,19 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ArenaOS", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.bus = EventBus()
     app.state.sandbox = ExecutionSandbox()
-    app.state.browser = PersistentBrowser()
+    # ONE Chromium for the whole app: the arena.ai model tab, the agent's
+    # webmail tab, AND the operator's free browsing all live in this single
+    # persistent context on the ARENA profile dir (where the arena.ai login
+    # already lives). Real fix for the free-tier OOM: two separate Chromium
+    # launches (~300-500MB each) on a 512MB host got the process killed,
+    # which is what wiped the arena.ai login and made it ask for the email
+    # again after every restart. One launch, one profile, login survives.
+    try:
+        from arenaos.arena.web_provider import WebSessionConfig as _WSC
+        _shared_profile = Path(_WSC().browser_profile_dir)
+    except Exception:
+        _shared_profile = None
+    app.state.browser = PersistentBrowser(profile_dir=_shared_profile)
     app.state.memory = MemoryStore()
     app.state.autolearn = AutoLearner(app.state.memory)
     app.state.secrets = SecretsManager()

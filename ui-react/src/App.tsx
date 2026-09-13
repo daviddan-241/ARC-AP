@@ -49,7 +49,7 @@ function NavLink({ href, label, icon: I, active, onClick }: {
 }) {
   return (
     <Link href={href} onClick={onClick}
-      className={`arc-transition flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active ? "bg-[#007AFF]/[.08] font-semibold text-[#007AFF]" : "text-[#374151] hover:bg-black/[.04] hover:text-[#111827]"}`}>
+      className={`arc-transition flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active ? "bg-[#6366F1]/[.08] font-semibold text-[#6366F1]" : "text-[#374151] hover:bg-black/[.04] hover:text-[#111827]"}`}>
       <I size={17} strokeWidth={1.8} /><span>{label}</span>
     </Link>
   );
@@ -64,7 +64,7 @@ function NewChatButton({ onNavigate }: { onNavigate?: () => void }) {
   const resetChat = useStore((s) => s.resetChat);
   return (
     <button onClick={() => { setConversation(null); resetChat(); navigate("/chat"); onNavigate?.(); }}
-      className="mb-4 flex w-full items-center gap-3 rounded-2xl bg-[#007AFF] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#007AFF]/25 active:scale-[.98]">
+      className="mb-4 flex w-full items-center gap-3 rounded-2xl bg-[#6366F1] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6366F1]/25 active:scale-[.98]">
       <MessageSquarePlus size={17} />New chat
     </button>
   );
@@ -133,7 +133,7 @@ function SidebarBody({ location, onNavigate, onLogOut }: {
       <div className="mt-auto" />
       <div className="mt-6 border-t border-[#E5E7EB] pt-3">
         <div className="mb-2 flex items-center gap-3 px-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-[11px] font-bold text-white">DO</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6366F1] text-[11px] font-bold text-white">DO</span>
           <span><b className="block text-[13px] font-semibold text-[#111827]">Danny Op</b><small className="text-[11px] text-[#9CA3AF]">Operator</small></span>
         </div>
         <LogoutButton onDone={onLogOut} />
@@ -151,7 +151,7 @@ function Shell({ children }: { children: ReactNode }) {
       {/* desktop command center */}
       <aside className="arc-scroll hidden w-[248px] shrink-0 flex-col overflow-y-auto border-r border-[#E5E7EB] bg-white px-3 py-5 md:flex">
         <Link href="/chat" className="mb-5 flex items-center gap-3 px-3">
-          <BrandMark small /><span className="font-semibold tracking-[.18em] text-[#111827]">ARC<span className="text-[#007AFF]">.</span></span>
+          <BrandMark small /><span className="font-semibold tracking-[.18em] text-[#111827]">ARC<span className="text-[#6366F1]">.</span></span>
         </Link>
         <SidebarBody location={location} />
       </aside>
@@ -160,8 +160,8 @@ function Shell({ children }: { children: ReactNode }) {
         {/* mobile top bar */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white/85 px-4 backdrop-blur-xl md:hidden">
           <IconButton label="Open menu" onClick={() => setDrawer(true)}><Menu size={19} /></IconButton>
-          <Link href="/chat" className="flex items-center gap-2"><BrandMark small /><span className="font-semibold tracking-[.16em] text-[#111827]">ARC<span className="text-[#007AFF]">.</span></span></Link>
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF] text-[10px] font-bold text-white">DO</span>
+          <Link href="/chat" className="flex items-center gap-2"><BrandMark small /><span className="font-semibold tracking-[.16em] text-[#111827]">ARC<span className="text-[#6366F1]">.</span></span></Link>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#6366F1] text-[10px] font-bold text-white">DO</span>
         </header>
         {/* ONE scroll owner per page, never two: main is a fixed-height slot
            (overflow-hidden). Each page manages its own internal scroll region.
@@ -180,7 +180,7 @@ function Shell({ children }: { children: ReactNode }) {
               transition={{ type: "spring", damping: 28, stiffness: 260 }} onClick={(e) => e.stopPropagation()}
               className="absolute left-0 top-0 flex h-full w-[min(320px,88vw)] flex-col border-r border-[#E5E7EB] bg-white p-4 shadow-2xl">
               <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3"><BrandMark small /><span className="font-semibold tracking-[.18em] text-[#111827]">ARC<span className="text-[#007AFF]">.</span></span></div>
+                <div className="flex items-center gap-3"><BrandMark small /><span className="font-semibold tracking-[.18em] text-[#111827]">ARC<span className="text-[#6366F1]">.</span></span></div>
                 <IconButton label="Close" onClick={() => setDrawer(false)}><X size={18} /></IconButton>
               </div>
               <div className="arc-scroll flex-1 overflow-y-auto">

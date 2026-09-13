@@ -103,7 +103,7 @@ export default function SettingsPage() {
     </div>
   );
   const Toggle = ({ on }: { on: boolean }) => (
-    <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-[#007AFF]" : "bg-[#D1D5DB]"}`}>
+    <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-[#6366F1]" : "bg-[#D1D5DB]"}`}>
       <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? "left-[18px]" : "left-0.5"}`} />
     </span>
   );
@@ -134,12 +134,12 @@ export default function SettingsPage() {
           <Row icon={LockKeyhole} label="PIN lock" sub="A 4-digit PIN unlocks the app after your operator password. Stored hashed server-side." />
           <div className="flex items-center gap-2 border-b border-[#E5E7EB] bg-black/[.015] p-4">
             <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="••••"
-              className="w-28 rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-center text-lg font-bold tracking-[.4em] text-[#111827] outline-none focus:border-[#007AFF]/50" />
+              className="w-28 rounded-xl border border-[#E5E7EB] bg-white px-3 py-2.5 text-center text-lg font-bold tracking-[.4em] text-[#111827] outline-none focus:border-[#6366F1]/50" />
             <button onClick={savePin} disabled={pinBusy}
-              className="flex items-center gap-2 rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">
+              className="flex items-center gap-2 rounded-xl bg-[#6366F1] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">
               {pinBusy ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}Save PIN
             </button>
-            {pinMsg && <small className="text-xs text-[#007AFF]">{pinMsg}</small>}
+            {pinMsg && <small className="text-xs text-[#6366F1]">{pinMsg}</small>}
           </div>
           <Row icon={LogOut} label="Log out" sub="Ends this session on the server and re-locks the app."
             onClick={logOut}
@@ -153,7 +153,7 @@ export default function SettingsPage() {
           <Row icon={Trash2} label="Delete all chats" sub="Really deletes every conversation from the server — permanent."
             onClick={purging ? undefined : purgeChats}
             right={purging ? <Loader2 size={15} className="animate-spin text-rose-600" /> : <b className="text-[13px] font-semibold text-rose-600">Delete</b>} />
-          {purgeMsg && <small className="block bg-black/[.015] p-3 text-xs text-[#007AFF]">{purgeMsg}</small>}
+          {purgeMsg && <small className="block bg-black/[.015] p-3 text-xs text-[#6366F1]">{purgeMsg}</small>}
         </Section>
 
         <Section title="Get help">

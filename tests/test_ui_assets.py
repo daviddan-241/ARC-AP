@@ -42,10 +42,10 @@ def test_spa_serves_and_deep_links(client: TestClient) -> None:
 
 def test_design_tokens_present(client: TestClient) -> None:
     css = _app_css()
-    # ARC design tokens — v13 light consumer contract: pure-white/near-white
-    # surfaces, #007AFF iOS accent, #E5E7EB borders, #111827/#6B7280 text.
-    # The dark navy surfaces (#080b25/#111531/#020313) must be GONE.
-    for token in ("#007aff", "#e5e7eb"):
+    # ARC design tokens — v14 light consumer contract: pure-white/near-white
+    # surfaces, #6366F1 indigo (blue-purple) accent, #E5E7EB borders,
+    # #111827/#6B7280 text. The dark navy surfaces must be GONE.
+    for token in ("#6366f1", "#e5e7eb"):
         assert token in css.lower(), f"missing design token {token}"
     for dark in ("#080b25", "#111531", "#020313"):
         assert dark not in css.lower(), f"dark-era token {dark} still present in built CSS"
@@ -152,14 +152,15 @@ def test_mic_button_gives_honest_feedback_when_unsupported() -> None:
     assert 'role="status"' in src  # announced to screen readers too
 
 
-def test_auth_gate_uses_dynamic_viewport_height_not_raw_dvh() -> None:
-    """Regression: the login/PIN screen used a hardcoded 100dvh, the same
-    unreliable-on-keyboard-open unit the composer fix already replaced
-    elsewhere. 'the login whatever the keyboard it's still not okay' traces
-    straight to this -- it needed the same --app-vh fix, just never got it."""
+def test_auth_gate_static_viewport_keyboard_does_not_recenter() -> None:
+    """v14: the login/PIN screen must NOT chase the shrinking visual
+    viewport (--app-vh) — re-centering the card every time the keyboard
+    opened/closed is exactly the 'it leaves its place' report. A normal
+    login screen: static 100dvh, the browser auto-scrolls the focused field
+    into view, the card itself never moves."""
     src = (SRC / "components" / "AuthGate.tsx").read_text()
-    assert "var(--app-vh" in src
-    assert "min-h-[100dvh]" not in src
+    assert "var(--app-vh" not in src
+    assert "min-h-[100dvh]" in src
 
 
 def test_sidebar_matches_reference_nav_structure() -> None:
@@ -205,13 +206,15 @@ def test_logout_actually_resets_the_auth_gate() -> None:
     assert 'if (!authed && phase === "ready") setPhase("password")' in src
 
 def test_light_mode_token_contract() -> None:
-    """v13: :root tokens must be the light consumer palette — near-white
-    background, dark foreground, #007AFF-style primary (211 100% 50%),
+    """v14: :root tokens must be the light consumer palette with the
+    blue-purple primary — near-white background, dark foreground,
+    #6366F1 indigo primary (239 84% 67%), violet accent (258 90% 66%),
     light gray borders. The old dark :root values must be gone."""
     css = (SRC / "index.css").read_text()
     assert "--background: 210 20% 98%" in css
     assert "--foreground: 217 19% 15%" in css
-    assert "--primary: 211 100% 50%" in css
+    assert "--primary: 239 84% 67%" in css
+    assert "--accent: 258 90% 66%" in css
     assert "--border: 216 13% 91%" in css
     assert "radial-gradient(circle at 78% -12%" not in css  # heavy dark gradients removed
 

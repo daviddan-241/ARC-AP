@@ -153,6 +153,11 @@ def test_ws_free_session_opens_any_site_on_the_persistent_browser():
             # it actually navigates to the requested site (this was the bug:
             # any URL used to silently show the arena page instead)
             page.goto.assert_awaited_once_with("https://www.google.com", wait_until="commit")
+            # v14: the socket is accepted BEFORE the page resolves, so a
+            # cold-start Chromium launch streams a live status (instead of
+            # the old false "connection closed" error), then the url.
+            msg = ws.receive_json()
+            assert msg["type"] == "status" and msg["status"] == "connecting", msg
             msg = ws.receive_json()
             assert msg["type"] == "url", msg
             # taps relay into the real page

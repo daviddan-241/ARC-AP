@@ -29,7 +29,7 @@ export default function ThoughtsPage() {
             <div key={st.id} className="border-b border-[#E5E7EB] last:border-b-0">
               <button onClick={() => setOpenId(openId === st.id ? null : st.id)} className="flex w-full items-center gap-3 p-4 text-left hover:bg-black/[.02]">
                 {st.state === "ok" ? <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10"><Check size={13} strokeWidth={3} className="text-emerald-600" /></span>
-                  : st.state === "running" ? <Loader2 size={16} className="shrink-0 animate-spin text-[#007AFF]" />
+                  : st.state === "running" ? <Loader2 size={16} className="shrink-0 animate-spin text-[#6366F1]" />
                   : <span className="h-7 w-7 shrink-0 rounded-lg border-2 border-rose-400/40" />}
                 <span className="min-w-0 flex-1 text-[13.5px] text-[#111827]">{st.label}</span>
                 {st.detail && (openId === st.id ? <ChevronDown size={14} className="text-[#9CA3AF]" /> : <ChevronRight size={14} className="text-[#9CA3AF]" />)}
@@ -49,7 +49,7 @@ export default function ThoughtsPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {sources.map((src, i) => (
-              <a key={i} href={src.url} target="_blank" rel="noreferrer" className="arc-card flex items-center gap-3 rounded-2xl p-4 hover:border-[#007AFF]/40">
+              <a key={i} href={src.url} target="_blank" rel="noreferrer" className="arc-card flex items-center gap-3 rounded-2xl p-4 hover:border-[#6366F1]/40">
                 {src.logo ? <img src={src.logo} alt="" className="h-8 w-8 rounded-lg" /> : <div className="arc-gradient h-8 w-8 rounded-lg" />}
                 <span className="min-w-0 flex-1"><b className="block truncate text-sm text-[#111827]">{src.title}</b><small className="text-xs text-[#9CA3AF]">{src.domain}</small></span>
               </a>

@@ -18,7 +18,7 @@ Danny types his own credentials into the real sites himself — handles
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -47,16 +47,16 @@ async def run_live_login(websocket: WebSocket, session: "ArenaWebSession",
     guarded = page is None
     if guarded:
         session.live_login_active = True
+
+    async def _get_target() -> Any:
+        # Resolved AFTER the socket is already accepted (see _stream_page) —
+        # a slow cold-start Chromium launch now shows the operator a live
+        # "waking up" status instead of looking like a dead connection.
+        return page if page is not None else await session.get_page()
+
     try:
-        target = page if page is not None else await session.get_page()
-        await page_set_viewport(target)
-        # frames must stream from the FIRST moment — never make the operator
-        # stare at a blank overlay while a slow site loads. Navigate after the
-        # screencast is already running so every paint (including the loader)
-        # reaches the screen and taps land as soon as content exists.
         start_url_eff = start_url or session.config.chat_url
-        await _stream_page(websocket, target,
-                           navigate_if_blank=start_url_eff)
+        await _stream_page(websocket, _get_target, navigate_if_blank=start_url_eff)
     finally:
         if guarded:
             session.live_login_active = False
@@ -69,9 +69,10 @@ async def run_free_browser(websocket: WebSocket, browser: "PersistentBrowser",
     The named "operator" page stays alive between sessions, so the site is
     where the operator left it and logins persist in the profile dir.
     """
-    page = await browser.get_page("operator")
-    await page_set_viewport(page)
-    await _stream_page(websocket, page, navigate_if_blank=start_url,
+    async def _get_target() -> Any:
+        return await browser.get_page("operator")
+
+    await _stream_page(websocket, _get_target, navigate_if_blank=start_url,
                        force_goto=start_url)
 
 
@@ -82,16 +83,23 @@ async def page_set_viewport(page: Any) -> None:
         pass  # viewport is nice-to-have; never block the stream on it
 
 
-async def _stream_page(websocket: WebSocket, page: Any,
+async def _stream_page(websocket: WebSocket, page_getter: Callable[[], Awaitable[Any]],
                        navigate_if_blank: str | None = None,
                        force_goto: str | None = None) -> None:
-    """Drive one live WebSocket connection against a real page: accept first,
-    screencast second, navigate last — so the operator sees every frame from
-    the very start and can tap as soon as the page has content."""
+    """Drive one live WebSocket connection: accept FIRST — before the (possibly
+    slow, cold-start) real page is even resolved — so a first-launch Chromium
+    spin-up never looks like a dropped connection to the client. A "connecting"
+    status goes out immediately; the frontend shows a live waking-up state
+    instead of the old false "connection closed" error. Screencast starts
+    second, navigate last, so the operator sees every loading frame."""
     await websocket.accept()
     cdp = None
     url_task = None
     try:
+        await websocket.send_json({"type": "status", "status": "connecting"})
+        page = await page_getter()
+        await page_set_viewport(page)
+
         cdp = await page.context.new_cdp_session(page)
         cdp.on("Page.screencastFrame", lambda params: asyncio.ensure_future(
             _relay_frame(websocket, cdp, params)))
