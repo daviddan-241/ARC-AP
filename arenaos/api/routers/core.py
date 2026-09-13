@@ -390,6 +390,7 @@ def status(request: Request, user=Depends(get_current_user)) -> dict:
         session.close()
     secrets = request.app.state.secrets
     vault_names = {item.get("name") for item in secrets.list()}
+    from arenaos.hosting import load_map
     return {
         "transport": settings.arena_transport,
         "arena_provider": request.app.state.provider.config.name
@@ -399,6 +400,8 @@ def status(request: Request, user=Depends(get_current_user)) -> dict:
         # presence only — key VALUES never leave the server
         "appdeploy_key": "appdeploy_api_key" in vault_names,
         "composio_key": "composio_api_key" in vault_names,
+        # backends self-hosted in ARC's own Linux shell (selfhost tool)
+        "selfhost_apps": len(load_map()),
     }
 
 

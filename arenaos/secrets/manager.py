@@ -1,6 +1,7 @@
 """Encrypted secrets manager over the Credential table. Values never logged or echoed."""
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -15,6 +16,19 @@ logger = get_logger(__name__)
 
 class SecretNotFound(KeyError):
     """Raised when a credential name is not in the vault."""
+
+
+# Env vars re-imported into the vault on every boot — the durable path for
+# keys that must survive Render REDEPLOYS (which wipe the container's
+# filesystem, DB and all). Set them once in the Render dashboard →
+# Environment and they carry forever.
+ENV_BOOTSTRAP: list[tuple[str, str, str]] = [
+    ("COMPOSIO_API_KEY", "composio_api_key", "token"),
+    ("APPDEPLOY_API_KEY", "appdeploy_api_key", "token"),
+    ("ARENA_WEB_EMAIL", "arena_web_email", "credential"),
+    ("ARENA_WEB_PASSWORD", "arena_web_password", "credential"),
+    ("ARENA_WEB_SESSION_COOKIE", "arena_web_session_cookie", "cookie"),
+]
 
 
 class SecretsManager:
@@ -75,6 +89,33 @@ class SecretsManager:
             return True
         finally:
             session.close()
+
+    def reseed_from_env(self) -> dict:
+        """Re-import operator-provided env secrets into the vault on every boot.
+
+        WHY: Render wipes the container filesystem on every redeploy — the
+        DB-backed vault dies with it, which is exactly why an API key added
+        once in Settings could disappear "after restart". Env vars set once
+        in the Render dashboard survive redeploys forever, so they are the
+        durable path: when an env var is present it is re-imported into the
+        vault on boot (env wins, so updating the dashboard updates ARC);
+        when it is absent, an in-app vault entry is left untouched and
+        still survives ordinary restarts/crashes. Values are never logged.
+        """
+        imported, skipped = [], []
+        for env_name, vault_name, kind in ENV_BOOTSTRAP:
+            value = os.getenv(env_name)
+            if not value:
+                continue
+            try:
+                self.set(vault_name, kind, value)
+                imported.append(env_name)
+            except Exception as exc:
+                logger.warning("vault reseed failed for %s: %s", env_name, exc)
+                skipped.append(env_name)
+        if imported:
+            logger.info("vault: reseeded from env on boot: %s", ", ".join(imported))
+        return {"imported": imported, "skipped": skipped}
 
     def list(self) -> list[dict]:
         """List names/kinds/metadata only — never values."""

@@ -183,10 +183,18 @@ async def test_appdeploy_unknown_action_is_honest():
     assert not res.ok and "unknown action" in res.error
 
 
-async def test_appdeploy_needs_key_hint(vault):
-    from arenaos.tools.appdeploy import AppDeployTool
-    res = await AppDeployTool().execute(
-        AppDeployTool.args_model(action="list"), ctx("appdeploy"))
+async def test_appdeploy_auto_provision_failure_is_honest(vault, monkeypatch):
+    """v14.1 contract: a missing key now AUTO-provisions (it's everywhere,
+    no manual step). When provisioning itself fails (offline, upstream
+    down), the error is honest and still points at action='key'."""
+    import arenaos.tools.appdeploy as ap
+
+    async def _fail():
+        raise MCPError("network unreachable in test")
+
+    monkeypatch.setattr(ap, "provision_key", _fail)
+    res = await ap.AppDeployTool().execute(
+        ap.AppDeployTool.args_model(action="list"), ctx("appdeploy"))
     assert not res.ok
     assert "action='key'" in res.error  # the one-step fix is spelled out
 

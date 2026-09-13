@@ -147,6 +147,12 @@ def create_app() -> FastAPI:
     app.state.memory = MemoryStore()
     app.state.autolearn = AutoLearner(app.state.memory)
     app.state.secrets = SecretsManager()
+    # Durable keys across redeploys: env vars from the Render dashboard are
+    # re-imported into the (encrypted, DB-backed) vault on every boot, so a
+    # Composio/AppDeploy key set once in the dashboard carries forever even
+    # though Render wipes the filesystem on each deploy. In-app vault saves
+    # still work and survive ordinary restarts/crashes.
+    app.state.secrets.reseed_from_env()
     app.state.audit = Audit(bus=app.state.bus)
     app.state.provider = None
     app.state.engine = None
@@ -183,6 +189,11 @@ def create_app() -> FastAPI:
     app.include_router(tasks_router.router)
     app.include_router(core_router.router)
     app.include_router(live_browser_router.router)
+    # Public reverse proxy for apps self-hosted in ARC's own Linux shell
+    # (the `selfhost` tool registers them; the proxy only forwards to the
+    # registered 127.0.0.1 ports — never an arbitrary host).
+    from arenaos.api.routers import hosted as hosted_router
+    app.include_router(hosted_router.router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> JSONResponse:

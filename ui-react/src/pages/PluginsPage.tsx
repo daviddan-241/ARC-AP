@@ -172,7 +172,10 @@ export default function PluginsPage() {
               <p className="mb-3 text-xs leading-5 text-[#6B7280]">
                 App plugins (Gmail, GitHub, Slack…) run through the Composio gateway. Grab a free API key at
                 <button onClick={() => openBrowser("https://dashboard.composio.dev", "free")} className="mx-1 font-semibold text-[#6366F1]">dashboard.composio.dev → API Keys</button>
-                and paste it below — it's stored encrypted server-side.
+                and paste it below — it's stored encrypted server-side and
+                stays across restarts. (To also survive app redeploys on
+                Render's free tier, set <code>COMPOSIO_API_KEY</code> once in
+                Render → Environment — ARC re-imports it on every boot.)
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input type="password" value={composioValue} onChange={(e) => setComposioValue(e.target.value)}

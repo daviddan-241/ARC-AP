@@ -55,13 +55,26 @@ def _get_key() -> str | None:
         return None
 
 
-def _client() -> StreamableMCPClient:
+async def _client() -> StreamableMCPClient:
+    """The key 'carries it everywhere': if the vault has no AppDeploy key,
+    one is AUTO-provisioned right here (zero-setup, no account) so the
+    deploy capability works from any screen or agent turn without a manual
+    key step. The operator can still force a fresh key with action='key'.
+    """
     key = _get_key()
     if not key:
+        logger.info("appdeploy: no key in vault — auto-provisioning a free one")
+        try:
+            await provision_key()
+        except MCPError as exc:
+            raise MCPError(
+                f"AppDeploy auto-provisioning failed: {exc} — retry, or run "
+                "action='key' manually for the raw upstream error.")
+        key = _get_key()
+    if not key:
         raise MCPError(
-            "no AppDeploy API key in the vault. Fix it in one step: run this "
-            "tool with action='key' — it provisions a real free key "
-            "automatically (no account needed).")
+            "auto-provisioning did not yield a key — check the server logs, "
+            "or run action='key' manually for the exact upstream error.")
     return StreamableMCPClient(APPDEPLOY_MCP, api_key=key, timeout_s=180.0)
 
 
@@ -129,7 +142,7 @@ class AppDeployTool(BaseTool):
             if action == "key":
                 return ToolResult(ok=True, output=await provision_key())
 
-            client = _client()
+            client = await _client()
             if action == "instructions":
                 out = await client.call_tool_text("get_deploy_instructions", {})
             elif action == "template":

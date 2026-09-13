@@ -47,6 +47,10 @@ def build_registry(sandbox: ExecutionSandbox, browser: PersistentBrowser,
     registry.register(EmailCodeTool(email_session_ref))
     registry.register(EmailTapLinkTool(email_session_ref))
     registry.register(EmailSendTool(email_session_ref))
+    # Self-hosting: run backends ARC builds inside its OWN Linux shell
+    # (real processes + a public /hosted/<name>/ reverse proxy).
+    from arenaos.tools.selfhost import register_selfhost
+    register_selfhost(registry, sandbox)
     # Real integrations with the vendored upstream repos (freqtrade,
     # gpt-researcher, TorBot) — execute the actual vendored code.
     from arenaos.tools.integrations import register_integrations
