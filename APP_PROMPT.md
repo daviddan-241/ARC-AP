@@ -19,8 +19,7 @@ ARC (codebase name ArenaOS) is a self-hosted, single-operator, autonomous AI age
 
 ## Design system (v14 — light, blue-purple)
 - Light consumer palette: near-white background (`--background: 210 20% 98%`), dark text (`#111827`/`#6B7280`), light gray borders (`#E5E7EB`), surfaces white/`#F9FAFB`.
-- **Primary = indigo #6366F1** (hsl 239 84% 67%); accent = violet #7C3AED (hsl 258 90% 66%); arc-gradient = blue → violet → fuchsia. All accents, buttons, focus rings, active pills use this blue-purple family (no iOS blue, no cyan).
-- Classes: `.arc-card`, `.arc-gradient`, `.arc-mono`, `.arc-composer-pill`, `.arc-shell`. Fonts: Plus Jakarta Sans (sans) + Syne (display). Brand: ARC artwork mark with gradient wash. All inputs globally 16px (iOS no-zoom rule). PWA `theme_color` = #6366F1.
+- **Primary = iOS blue #007AFF** (hsl 211 100% 50%) — Danny's STRICT visual language; accent = cyan #22D3EE family (hsl 194 92% 55%) used ONLY as a secondary highlight; arc-gradient = iOS blue → cyan (no violet, no fuchsia, no heavy gradients). Background: pure white / #F9FAFB; text: #111827 primary, #6B7280 secondary; cards: white with soft #E5E7EB borders. No dark navy anywhere in the default theme.
 
 ## Screens (all real-backed)
 - **Chat:** SSE streaming with live "thoughts" (real tool-call steps), file attach (real upload), suggestion chips that autofill the composer, Gemini-style single-pill composer (attach / textarea / mic-morphs-to-send, Fast/Deep modes in a spring sheet), Web Speech dictation, speechSynthesis read-aloud option, auto-follow scroll via IntersectionObserver (no fighting smooth-scroll), jump-to-latest button. Moods: Fast = uncensored direct; Deep = planner loop. The `connect_required` SSE event auto-pops the right connect card when a tool fails on a missing connector.

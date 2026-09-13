@@ -130,7 +130,7 @@ export default function PluginsPage() {
       <p className="mt-1 text-sm text-[#6B7280]">The single home for every tool and connector ARC can use. Keys live encrypted server-side.</p>
 
       {/* search — real client-side filter of the list below */}
-      <div className="mt-5 flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2.5 shadow-sm focus-within:border-[#6366F1]/50">
+      <div className="mt-5 flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2.5 shadow-sm focus-within:border-[#007AFF]/50">
         <Search size={16} className="shrink-0 text-[#9CA3AF]" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search plugins"
           className="w-full bg-transparent text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
@@ -150,8 +150,8 @@ export default function PluginsPage() {
                   const I = a.icon!;
                   return (
                     <button key={a.id} onClick={a.act} title={a.name}
-                      className="flex w-[86px] shrink-0 flex-col items-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm active:scale-[.97] hover:border-[#6366F1]/40">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><I size={18} /></span>
+                      className="flex w-[86px] shrink-0 flex-col items-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm active:scale-[.97] hover:border-[#007AFF]/40">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><I size={18} /></span>
                       <span className="w-full truncate text-center text-[11.5px] font-medium text-[#374151]">{a.name}</span>
                       <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600"><CheckCircle2 size={10} />Live</span>
                     </button>
@@ -166,12 +166,12 @@ export default function PluginsPage() {
           {keySheet === "composio" && (
             <div className="arc-card mt-5 rounded-2xl p-4">
               <div className="mb-2 flex items-center justify-between">
-                <b className="flex items-center gap-2 text-sm text-[#111827]"><KeyRound size={14} className="text-[#6366F1]" />Connect Composio first</b>
+                <b className="flex items-center gap-2 text-sm text-[#111827]"><KeyRound size={14} className="text-[#007AFF]" />Connect Composio first</b>
                 <button onClick={() => setKeySheet(null)} aria-label="Close" className="text-[#9CA3AF] hover:text-[#111827]"><X size={15} /></button>
               </div>
               <p className="mb-3 text-xs leading-5 text-[#6B7280]">
                 App plugins (Gmail, GitHub, Slack…) run through the Composio gateway. Grab a free API key at
-                <button onClick={() => openBrowser("https://dashboard.composio.dev", "free")} className="mx-1 font-semibold text-[#6366F1]">dashboard.composio.dev → API Keys</button>
+                <button onClick={() => openBrowser("https://dashboard.composio.dev", "free")} className="mx-1 font-semibold text-[#007AFF]">dashboard.composio.dev → API Keys</button>
                 and paste it below — it's stored encrypted server-side and
                 stays across restarts. (To also survive app redeploys on
                 Render's free tier, set <code>COMPOSIO_API_KEY</code> once in
@@ -180,13 +180,13 @@ export default function PluginsPage() {
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input type="password" value={composioValue} onChange={(e) => setComposioValue(e.target.value)}
                   placeholder="Paste Composio API key…"
-                  className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#6366F1]/50" />
+                  className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#007AFF]/50" />
                 <button onClick={saveComposio} disabled={composioBusy || !composioValue.trim()}
-                  className="rounded-xl bg-[#6366F1] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">
+                  className="rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">
                   {composioBusy ? "Saving…" : "Save key"}
                 </button>
               </div>
-              {composioMsg && <small className="mt-2 block text-xs text-[#6366F1]">{composioMsg}</small>}
+              {composioMsg && <small className="mt-2 block text-xs text-[#007AFF]">{composioMsg}</small>}
             </div>
           )}
 
@@ -212,19 +212,19 @@ export default function PluginsPage() {
                       <span className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-emerald-600"><CheckCircle2 size={14} />Connected</span>
                     ) : r.via === "appdeploy" ? (
                       <button onClick={provisionAppDeploy} disabled={appdeployBusy}
-                        className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#6366F1]/[.08] px-3.5 py-1.5 text-xs font-bold text-[#6366F1] hover:bg-[#6366F1]/[.14] disabled:opacity-50">
+                        className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#007AFF]/[.08] px-3.5 py-1.5 text-xs font-bold text-[#007AFF] hover:bg-[#007AFF]/[.14] disabled:opacity-50">
                         {appdeployBusy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}{appdeployBusy ? "…" : "Get free key"}
                       </button>
                     ) : composioKey ? (
                       <button onClick={() => rowAction(r)} aria-label={`Connect ${r.name}`}
-                        className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#6366F1]/[.08] px-3.5 py-1.5 text-xs font-bold text-[#6366F1] hover:bg-[#6366F1]/[.14]">
+                        className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#007AFF]/[.08] px-3.5 py-1.5 text-xs font-bold text-[#007AFF] hover:bg-[#007AFF]/[.14]">
                         <Plus size={13} />Connect
                       </button>
                     ) : (
                       // honest locked state: the gateway key genuinely isn't
                       // stored yet — tapping explains + opens the real key sheet
                       <button onClick={() => setKeySheet("composio")} aria-label={`${r.name} needs Composio`}
-                        className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#E5E7EB] px-3.5 py-1.5 text-xs font-medium text-[#6B7280] hover:border-[#6366F1]/40 hover:text-[#6366F1]">
+                        className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#E5E7EB] px-3.5 py-1.5 text-xs font-medium text-[#6B7280] hover:border-[#007AFF]/40 hover:text-[#007AFF]">
                         <Lock size={13} />Composio
                       </button>
                     )}

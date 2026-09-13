@@ -51,11 +51,11 @@ export default function ProjectsPage() {
       <div className="arc-card mb-5 rounded-3xl p-4 sm:p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New project name…"
-            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#6366F1]/50" />
+            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#007AFF]/50" />
           <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Description (optional)"
-            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#6366F1]/50" />
+            className="min-w-0 flex-1 rounded-xl border border-[#E5E7EB] bg-black/[.03] px-3.5 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#007AFF]/50" />
           <button onClick={create} disabled={creating || !name.trim()}
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#6366F1] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98] disabled:opacity-40">
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#007AFF] px-4 py-2.5 text-xs font-bold text-white active:scale-[.98] disabled:opacity-40">
             {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}New project
           </button>
         </div>
@@ -75,7 +75,7 @@ export default function ProjectsPage() {
             <div key={p.id} className="arc-card flex flex-col gap-2 rounded-2xl p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-400/10 text-violet-600"><FolderKanban size={16} /></span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 text-[#007AFF]"><FolderKanban size={16} /></span>
                   <b className="min-w-0 truncate text-sm text-[#111827]">{p.name}</b>
                 </div>
                 <button onClick={() => remove(p.id)} disabled={busyId === p.id} aria-label="Delete project"

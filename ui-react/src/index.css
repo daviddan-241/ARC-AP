@@ -97,7 +97,7 @@
 
   --sidebar-border: 216 13% 91%;
 
-  --sidebar-primary: 239 84% 67%;
+  --sidebar-primary: 211 100% 50%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 
@@ -105,7 +105,7 @@
 
   --sidebar-accent-foreground: 217 19% 15%;
 
-  --sidebar-ring: 239 84% 67%;
+  --sidebar-ring: 211 100% 50%;
 
   --popover: 0 0% 100%;
 
@@ -113,7 +113,7 @@
 
   --popover-border: 216 13% 91%;
 
-  --primary: 239 84% 67%;
+  --primary: 211 100% 50%;
 
   --primary-foreground: 0 0% 100%;
 
@@ -125,7 +125,7 @@
 
   --muted-foreground: 220 9% 46%;
 
-  --accent: 258 90% 66%;
+  --accent: 194 92% 55%;
 
   --accent-foreground: 0 0% 100%;
 
@@ -134,8 +134,8 @@
   --destructive-foreground: 0 0% 100%;
 
   --input: 216 13% 91%;
-  --ring: 239 84% 67%;
-  --chart-1: 274 86% 63%;
+  --ring: 211 100% 50%;
+  --chart-1: 211 100% 50%;
   --chart-2: 194 92% 62%;
   --chart-3: 325 79% 62%;
   --chart-4: 42 92% 63%;
@@ -246,7 +246,7 @@
 
   --sidebar-border: 228 31% 17%;
 
-  --sidebar-primary: 274 86% 63%;
+  --sidebar-primary: 211 100% 50%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 
@@ -454,8 +454,8 @@
 .arc-glass { background: hsl(230 45% 9% / .72); border: 1px solid hsl(var(--foreground) / .09); backdrop-filter: blur(18px); }
 .arc-title { font-family: var(--app-font-serif); letter-spacing: -.04em; }
 .arc-mono { font-family: var(--app-font-mono); }
-.arc-gradient { background: linear-gradient(125deg, hsl(221 83% 53%), hsl(258 90% 66%) 55%, hsl(292 84% 61%)); }
-.arc-gradient-text { background: linear-gradient(125deg, hsl(194 92% 70%), hsl(274 86% 76%) 55%, hsl(325 79% 72%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.arc-gradient { background: linear-gradient(125deg, hsl(211 100% 50%), hsl(194 92% 55%) 60%, hsl(199 95% 58%)); }
+.arc-gradient-text { background: linear-gradient(125deg, hsl(211 100% 46%), hsl(194 92% 48%) 55%, hsl(199 95% 44%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 /* .arc-focus keeps a visible outline for KEYBOARD nav on buttons/links (real
    a11y need) -- but text inputs never get the harsh blue browser-default ring
    Danny flagged; they get a soft border-color shift instead (see
@@ -463,7 +463,7 @@
 .arc-focus:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
 textarea, input { outline: none !important; -webkit-tap-highlight-color: transparent; }
 .arc-transition { transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, opacity .2s ease; }
-.arc-chat-page { background: linear-gradient(180deg, hsl(239 84% 67% / .05), transparent 22%); }
+.arc-chat-page { background: linear-gradient(180deg, hsl(211 100% 50% / .04), transparent 22%); }
 .arc-chat-scroll { overscroll-behavior: contain; }
 .arc-composer-dock {
   background: linear-gradient(180deg, transparent, hsl(0 0% 100% / .96) 26%);

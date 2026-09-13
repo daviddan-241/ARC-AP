@@ -43,7 +43,7 @@ def test_spa_serves_and_deep_links(client: TestClient) -> None:
 def test_design_tokens_present(client: TestClient) -> None:
     css = _app_css()
     # ARC design tokens — v14 light consumer contract: pure-white/near-white
-    # surfaces, #6366F1 indigo (blue-purple) accent, #E5E7EB borders,
+    # surfaces, #007AFF indigo (blue-purple) accent, #E5E7EB borders,
     # #111827/#6B7280 text. The dark navy surfaces must be GONE.
     for token in ("#6366f1", "#e5e7eb"):
         assert token in css.lower(), f"missing design token {token}"
@@ -206,15 +206,15 @@ def test_logout_actually_resets_the_auth_gate() -> None:
     assert 'if (!authed && phase === "ready") setPhase("password")' in src
 
 def test_light_mode_token_contract() -> None:
-    """v14: :root tokens must be the light consumer palette with the
-    blue-purple primary — near-white background, dark foreground,
-    #6366F1 indigo primary (239 84% 67%), violet accent (258 90% 66%),
-    light gray borders. The old dark :root values must be gone."""
+    """v15: :root tokens must be Danny's STRICT light consumer palette —
+    near-white background, dark foreground, #007AFF iOS-blue primary
+    (211 100% 50%), cyan accent (secondary highlight only), light gray
+    borders. No indigo/violet/fuchsia, no heavy gradients, no dark :root."""
     css = (SRC / "index.css").read_text()
     assert "--background: 210 20% 98%" in css
     assert "--foreground: 217 19% 15%" in css
-    assert "--primary: 239 84% 67%" in css
-    assert "--accent: 258 90% 66%" in css
+    assert "--primary: 211 100% 50%" in css
+    assert "--accent: 194 92% 55%" in css
     assert "--border: 216 13% 91%" in css
     assert "radial-gradient(circle at 78% -12%" not in css  # heavy dark gradients removed
 

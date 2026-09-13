@@ -52,9 +52,9 @@ export default function SkillsPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {list.map((t) => (
-              <button key={t.name} onClick={() => setActive(t)} className="arc-card rounded-2xl p-4 text-left hover:border-[#6366F1]/40 active:scale-[.99]">
+              <button key={t.name} onClick={() => setActive(t)} className="arc-card rounded-2xl p-4 text-left hover:border-[#007AFF]/40 active:scale-[.99]">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><TerminalSquare size={16} /></span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><TerminalSquare size={16} /></span>
                   <b className="truncate text-[13.5px] font-semibold text-[#111827]">{t.name}</b>
                 </div>
                 <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#6B7280]">{t.description ?? "Real server tool."}</p>
@@ -100,7 +100,7 @@ function ToolRunner({ tool, onClose }: { tool: ToolInfo; onClose: () => void }) 
         transition={{ type: "spring", damping: 28, stiffness: 300 }} className="arc-card max-h-[82vh] w-full max-w-xl overflow-y-auto rounded-t-3xl p-5 sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><TerminalSquare size={16} /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><TerminalSquare size={16} /></span>
             <div><b className="block text-sm font-semibold text-[#111827]">{tool.name}</b><small className="text-[11px] text-[#9CA3AF]">real server invocation</small></div>
           </div>
           <button onClick={onClose} aria-label="Close runner" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-black/[.05] hover:text-[#111827]"><X size={17} /></button>
@@ -117,7 +117,7 @@ function ToolRunner({ tool, onClose }: { tool: ToolInfo; onClose: () => void }) 
           </div>
         ))}
         <button onClick={run} disabled={busy}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#6366F1] py-2.5 text-sm font-bold text-white disabled:opacity-40 active:scale-[.98]">
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#007AFF] py-2.5 text-sm font-bold text-white disabled:opacity-40 active:scale-[.98]">
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}Run tool
         </button>
         {result && (

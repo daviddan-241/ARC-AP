@@ -69,7 +69,7 @@ export default function LibraryPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             {docs.map((f) => (
               <div key={f.name} className="arc-card flex items-center gap-3 rounded-2xl p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6366F1]/10 text-[#6366F1]"><FileText size={17} /></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF]"><FileText size={17} /></div>
                 <span className="min-w-0 flex-1">
                   <b className="block truncate text-sm text-[#111827]">{f.name}</b>
                   <small className="text-xs text-[#9CA3AF]">{(f.size / 1024).toFixed(1)} KB</small>
@@ -91,8 +91,8 @@ export default function LibraryPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {images.map((f) => projectId ? (
               <a key={f.name} href={api.fileDownloadUrl(projectId, f.name)} target="_blank" rel="noreferrer"
-                className="group flex aspect-[1.3] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-black/[.02] hover:border-[#6366F1]/40">
-                <ImageIcon size={20} className="text-[#9CA3AF] group-hover:text-[#6366F1]" />
+                className="group flex aspect-[1.3] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-black/[.02] hover:border-[#007AFF]/40">
+                <ImageIcon size={20} className="text-[#9CA3AF] group-hover:text-[#007AFF]" />
               </a>
             ) : null)}
           </div>

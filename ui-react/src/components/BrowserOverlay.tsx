@@ -139,7 +139,7 @@ export default function BrowserOverlay() {
             <p className="max-w-sm text-[14px] leading-relaxed text-[#374151]">{error}</p>
             <div className="flex gap-2">
               <button onClick={() => { setError(""); const u = targetUrl; useStore.getState().closeBrowser(); setTimeout(() => useStore.getState().openBrowser(u), 50); }
-              } className="rounded-full bg-[#6366F1] px-5 py-2.5 text-[13px] font-bold text-white active:scale-95">Retry</button>
+              } className="rounded-full bg-[#007AFF] px-5 py-2.5 text-[13px] font-bold text-white active:scale-95">Retry</button>
               <button onClick={closeBrowser} className="rounded-full border border-[#E5E7EB] px-5 py-2.5 text-[13px] font-semibold text-[#374151] hover:text-[#111827]">Close</button>
             </div>
           </div>

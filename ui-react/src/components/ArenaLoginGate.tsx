@@ -69,7 +69,7 @@ export default function ArenaLoginGate() {
     <div className="fixed inset-x-0 top-0 z-[110] flex items-center justify-between gap-3 border-b border-[#E5E7EB] bg-white px-4 py-2.5 text-[12.5px] font-medium text-[#111827] shadow-lg shadow-black/[.05]"
       style={{ paddingTop: "max(0.6rem, env(safe-area-inset-top))" }}>
       <span className="flex items-center gap-2">
-        <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[#6366F1]" />
+        <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[#007AFF]" />
         Connect your Arena.ai account — finish the sign-in below and this closes on its own.
       </span>
       <button onClick={dismiss} aria-label="Skip for now" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/[.06] text-[#374151] hover:bg-black/[.1]">
