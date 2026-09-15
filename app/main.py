@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .config import get_settings
-from . import ollama, ires, capabilities, research, terminal, store, tasks, crypto, browser
+from . import ollama, ires, capabilities, research, terminal, store, tasks, crypto, browser, colab
 
 S = get_settings()
 app = FastAPI(title="ARC", version="0.2.0",
@@ -49,6 +49,17 @@ class FileIn(BaseModel):
     path: str
     content: Optional[str] = None
     action: str = "read"
+
+class ColabIn(BaseModel):
+    action: str                # register|heartbeat|result|job|status|jobs (worker actions unauth: register/heartbeat/result/next)
+    worker_id: Optional[str] = None
+    job_id: Optional[str] = None
+    name: Optional[str] = None
+    gpu: Optional[str] = None
+    title: Optional[str] = None
+    code: Optional[str] = None
+    ok: Optional[bool] = None
+    output: Optional[str] = None
 
 class CryptoIn(BaseModel):
     action: str            # wallet|wallets|balance|coin|price
@@ -238,6 +249,38 @@ async def tasks_get(authorization: Optional[str] = Header(None)):
 
 
 # ---------- crypto lab ----------
+@app.get("/colab/status")
+async def colab_status():
+    return colab.status()
+
+@app.post("/colab")
+async def colab_route(body: ColabIn, authorization: Optional[str] = Header(None)):
+    await _check_auth(authorization)
+    a = body.action
+    if a == "register":
+        return colab.register(body.name or "colab", body.gpu or "")
+    if a == "heartbeat":
+        ok = colab.heartbeat(body.worker_id or "")
+        return {"ok": ok} if ok else JSONResponse({"error": "unknown worker"}, status_code=404)
+    if a == "next":
+        j = colab.next_job(body.worker_id or "")
+        return {"job": j} if j else {"job": None}
+    if a == "result":
+        j = colab.submit_result(body.job_id or "", body.worker_id or "", bool(body.ok), body.output or "")
+        return {"ok": True} if j else JSONResponse({"error": "job not found"}, status_code=404)
+    if a == "job":
+        if not body.code:
+            return JSONResponse({"error": "code required"}, status_code=400)
+        w = colab.online_worker()
+        st = "queued" if w else "queued (no Colab runtime online — start ARC_Colab_Agent.ipynb to process)"
+        j = colab.create_job(body.title or "untitled", body.code)
+        return {"job_id": j["id"], "status": st, "worker_online": bool(w)}
+    if a == "jobs":
+        return {"jobs": colab.jobs_detail()}
+    if a == "status":
+        return colab.status()
+    return JSONResponse({"error": "unknown action"}, status_code=400)
+
 @app.post("/crypto")
 async def crypto_ep(body: CryptoIn, authorization: Optional[str] = Header(None)):
     await _check_auth(authorization)

@@ -10,7 +10,7 @@ a model council of open-weight models (Qwen / Dolphin / DeepSeek) via any Ollama
   `/terminal`, `/tasks` (background worker that keeps going until you stop it),
   `/crypto` (REAL wallet generation, ERC-20 coin kits, live on-chain balances),
   `/settings` (write-only secrets), `/sessions`, `/files`, `/knowledge/*`,
-  `/projects`, `/github`, `/security-lab`.
+  `/projects`, `/github`, `/security-lab`, `/colab` (real Google Colab bridge — run colab/ARC_Colab_Agent.ipynb in Colab to bring a GPU runtime online as an ARC worker).
 - **IRES Ω engine** — Understand → Plan → Capability check → Tool selection → Execution →
   Validation → Error recovery → Synthesis → Response → Workflow memory.
   Activity stream (Pondering / Scouting / Computing / Forging / Studying / Weaving).

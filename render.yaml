@@ -1,5 +1,7 @@
 # ARC on Render — blueprint (free tier)
-# NOTE: free web services have 512MB RAM and sleep when idle.
+# NOTE: free tier = 750 instance-hours/month per workspace, 512MB RAM, sleep after 15 min.
+# One always-on service fits (720h); two do not — arc-ollama wakes on demand
+# (first chat reply may take ~60-90s while the model cold-loads).
 # The model host therefore carries small models; point OLLAMA_BASE_URL at
 # Ollama Cloud (https://ollama.com) for larger Qwen/DeepSeek families.
 services:

@@ -58,7 +58,16 @@ async def capabilities(admin: bool = False) -> dict:
     caps["browser"]["detail"] = f"playwright={pw_state.lower()}"
 
     # Research engine needs only httpx (bundled)
-    caps["research"] = {"state": "READY", "detail": f"max {S.RESEARCH_MAX_SOURCES} sources/query"}
+caps["research"] = {"state": "READY", "detail": f"max {S.RESEARCH_MAX_SOURCES} sources/query"}
+
+    # Colab bridge
+    try:
+        from . import colab as _colab
+        w = _colab.online_worker()
+        caps["colab"] = {"state": "READY" if w else "NOT_CONFIGURED",
+                         "detail": f"worker {w['name']} online" if w else "run ARC_Colab_Agent.ipynb in Colab to bring a runtime online"}
+    except Exception as e:
+        caps["colab"] = {"state": "ERROR", "detail": str(e)[:80]}
 
     # Integrations — honest NOT_CONFIGURED until credentials exist
     caps["github"] = {"state": "READY" if os.environ.get("GITHUB_TOKEN") else "NOT_CONFIGURED",

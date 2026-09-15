@@ -52,8 +52,17 @@ def _looks_like_terminal(msg: str) -> bool:
     return _word_match(msg, kws)
 
 
+def _looks_like_colab(msg: str) -> bool:
+    kws = ["colab", "on my notebook runtime", "gpu", "train", "train a model", "tensorflow", "pytorch"]
+    return _word_match(msg, kws)
+
+
 async def _classify(msg: str) -> str:
     """Understand: classify the task honestly with the primary model (fast path: heuristics)."""
+    if "colab status" in msg.lower():
+        return "colab_status"
+    if _looks_like_colab(msg) and len(msg) > 40:
+        return "colab"
     if _looks_like_research(msg):
         return "research"
     if _looks_like_terminal(msg):
@@ -137,6 +146,44 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
             report, sources = await research_web(msg)
             yield json.dumps(act("studying", f"Studying {len(sources)} sources")) + "\n"
             answer = report
+        elif kind in ("colab", "colab_status"):
+            import colab as _colab
+            from . import colab as _colab_mod
+            if kind == "colab_status":
+                st = _colab_mod.status()
+                w = st["worker"]
+                answer = ("Colab runtime ONLINE: " + w["name"] + (" (" + w.get("gpu", "") + ")") if w
+                          else "No Colab runtime online — open ARC_Colab_Agent.ipynb in Colab and run the cell."
+                          ) + f"\nJobs: {st['jobs']}"
+            else:
+                yield json.dumps(act("forging", "Queuing work for the Colab runtime")) + "\n"
+                # ask the primary model to draft the python code for colab
+                council2 = await ollama.detect_council()
+                prompt = ("Write a single self-contained Python 3 code block that accomplishes this task "
+                          "on a Google Colab VM (tensorflow/pytorch available, internet available). "
+                          "Output ONLY the code block, no explanations:\n\n" + msg)
+                code = ""
+                async for line in ollama.generate_stream(council2["primary"], prompt, system="You are a precise code generator."):
+                    try:
+                        d = json.loads(line)
+                    except Exception:
+                        continue
+                    code += d.get("response", "")
+                    if d.get("done"):
+                        break
+                code = code.strip()
+                if code.startswith("```"):
+                    code = code.strip("`").strip()
+                    if code.startswith("python"):
+                        code = code.split("\n", 1)[1] if "\n" in code else code
+                j = _colab_mod.create_job(title=msg[:60], code=code)
+                st = _colab_mod.status()
+                w = st["worker"]
+                if w:
+                    answer = ("Queued on Colab (job " + j["id"] + "). Your Colab runtime is online - it will pick this up within ~10 seconds and post the result back.")
+                else:
+                    answer = ("Queued on Colab (job " + j["id"] + "). No Colab runtime online right now - open ARC_Colab_Agent.ipynb in Google Colab and run the agent cell; it will claim this job automatically.")
+                answer += "\n\nCode queued:\n```\n" + code[:800] + "\n```"
         elif kind == "terminal":
             yield json.dumps(act("computing", "Preparing isolated execution")) + "\n"
             cmd = msg.strip().lstrip("$").strip()
