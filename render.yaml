@@ -1,0 +1,17 @@
+# ARC on Render — deploy with: render blueprint launch (or connect repo + create Web Service from this)
+services:
+  - type: web
+    name: arc-control-plane
+    runtime: docker
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: OLLAMA_BASE_URL
+        sync: false          # set to your Ollama endpoint, e.g. http://<host>:11434
+      - key: ARC_API_KEY
+        generateValue: true  # mobile app must send: Authorization: Bearer <this>
+      - key: ARC_DATA_DIR
+        value: /workspace
+      - key: GITHUB_TOKEN
+        sync: false          # optional
