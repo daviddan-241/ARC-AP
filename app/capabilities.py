@@ -58,7 +58,7 @@ async def capabilities(admin: bool = False) -> dict:
     caps["browser"]["detail"] = f"playwright={pw_state.lower()}"
 
     # Research engine needs only httpx (bundled)
-caps["research"] = {"state": "READY", "detail": f"max {S.RESEARCH_MAX_SOURCES} sources/query"}
+    caps["research"] = {"state": "READY", "detail": f"max {S.RESEARCH_MAX_SOURCES} sources/query"}
 
     # Colab bridge
     try:
