@@ -117,11 +117,19 @@ async def detect_council() -> dict:
     env_c = S.ARC_MODEL_CRITIC or ov.get("model_critic")
 
     # spec families: qwen (primary/instruct), dolphin (critic), deepseek (reasoning/coding)
-    primary = env_p or pick("qwen", "gpt-oss", "llama", "mistral", "gemma") or (installed[0] if installed else None)
-    reasoning = env_r or pick("deepseek", "qwen", "gpt-oss", "llama") or primary
-    critic = env_c or pick("dolphin", "qwen", "llama", "gemma") or primary
-    return {"primary": primary, "reasoning": reasoning, "critic": critic, "installed": installed,
-            "endpoint": _base()}
+    # Declared models are used ONLY if actually installed on the endpoint; otherwise
+    # ARC falls back to what exists and reports the gap honestly.
+    def declared_active(env_val, *families):
+        if env_val and env_val in installed:
+            return env_val
+        return pick(*families) or (installed[0] if installed else None)
+
+    primary = declared_active(env_p, "qwen", "gpt-oss", "llama", "mistral", "gemma")
+    reasoning = declared_active(env_r, "deepseek", "qwen", "dolphin", "gpt-oss", "llama") or primary
+    critic = declared_active(env_c, "dolphin", "qwen", "llama", "gemma") or primary
+    return {"primary": primary, "reasoning": reasoning, "critic": critic,
+            "declared": {"primary": env_p or None, "reasoning": env_r or None, "critic": env_c or None},
+            "installed": installed, "endpoint": _base()}
 
 
 async def generate_text(model: str, prompt: str, system: Optional[str] = None,

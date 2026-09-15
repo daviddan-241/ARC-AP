@@ -113,11 +113,21 @@ async def models(authorization: Optional[str] = Header(None)):
     await _check_auth(authorization)
     council = await ollama.detect_council()
     installed = council["installed"]
+    declared = council.get("declared") or {}
+    missing = [m for m in declared.values() if m and m not in installed]
     return {"arc": "online" if installed else "no models",
             "available": len(installed),
+            "declared": declared,
+            "active": {"primary": council["primary"],
+                       "reasoning": council["reasoning"],
+                       "critic": council["critic"]},
             "roles": {"primary": bool(council["primary"]),
                       "reasoning": bool(council["reasoning"]),
-                      "critic": bool(council["critic"])}}
+                      "critic": bool(council["critic"])},
+            "note": ("declared council models not installed on this host: " + ", ".join(missing)
+                     + " — ARC fell back to installed models. Connect a capable model host "
+                       "(Colab GPU worker or paid instance) to activate them.")
+                    if missing else None}
 
 
 # ---------- sessions (recent chats) ----------
