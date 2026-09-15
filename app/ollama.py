@@ -70,7 +70,7 @@ async def ollama_health() -> dict:
         return {"state": "OFFLINE", "detail": type(e).__name__}
 
 
-async def list_models() -> list:
+async def list_models(wake_retry: bool = False) -> list:
     base = _base().rstrip("/")
     try:
         async with httpx.AsyncClient(timeout=10) as c:
@@ -78,7 +78,17 @@ async def list_models() -> list:
             if r.status_code == 200:
                 return [m.get("name", "") for m in r.json().get("models", [])]
     except Exception:
-        pass
+        # cold-started free-tier host: wake it, wait, retry once
+        if wake_retry:
+            import asyncio
+            await asyncio.sleep(35)
+            try:
+                async with httpx.AsyncClient(timeout=30) as c:
+                    r = await c.get(f"{base}/api/tags", headers=_headers())
+                    if r.status_code == 200:
+                        return [m.get("name", "") for m in r.json().get("models", [])]
+            except Exception:
+                pass
     try:
         async with httpx.AsyncClient(timeout=10) as c:
             r = await c.get(f"{base}/v1/models", headers=_headers())
@@ -93,7 +103,7 @@ async def detect_council() -> dict:
     """Resolve the council. Env > settings.json > auto-detect by family name.
     Only ever returns models that ACTUALLY exist on the endpoint."""
     ov = _overlay()
-    installed = await list_models()
+    installed = await list_models(wake_retry=True)
 
     def pick(*families) -> Optional[str]:
         for fam in families:
@@ -122,11 +132,19 @@ async def generate_text(model: str, prompt: str, system: Optional[str] = None,
         if system:
             payload["system"] = system
         base = _base().rstrip("/")
-        async with httpx.AsyncClient(timeout=300) as c:
-            r = await c.post(f"{base}/api/generate", json=payload, headers=_headers())
-            if r.status_code != 200:
-                raise RuntimeError(f"ollama HTTP {r.status_code}: {r.text[:200]}")
-            return r.json().get("response", "")
+        import asyncio
+        for attempt in range(2):
+            try:
+                async with httpx.AsyncClient(timeout=300) as c:
+                    r = await c.post(f"{base}/api/generate", json=payload, headers=_headers())
+                    if r.status_code != 200:
+                        raise RuntimeError(f"ollama HTTP {r.status_code}: {r.text[:200]}")
+                    return r.json().get("response", "")
+            except (httpx.ConnectError, httpx.ReadTimeout):
+                if attempt == 0:
+                    await asyncio.sleep(20)  # cold start / restart race
+            except RuntimeError:
+                raise
     # OpenAI-compatible (Ollama Cloud etc.)
     msgs = ([{"role": "system", "content": system}] if system else []) + \
            [{"role": "user", "content": prompt}]
