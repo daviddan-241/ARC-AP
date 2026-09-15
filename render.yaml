@@ -1,17 +1,30 @@
-# ARC on Render — deploy with: render blueprint launch (or connect repo + create Web Service from this)
+# ARC on Render — blueprint (free tier)
+# NOTE: free web services have 512MB RAM and sleep when idle.
+# The model host therefore carries small models; point OLLAMA_BASE_URL at
+# Ollama Cloud (https://ollama.com) for larger Qwen/DeepSeek families.
 services:
   - type: web
-    name: arc-control-plane
+    name: arc-ollama
     runtime: docker
-    plan: starter
+    dockerfilePath: ./ollama-service/Dockerfile
+    plan: free
     region: oregon
-    healthCheckPath: /health
+    envVars:
+      - key: OLLAMA_MODELS
+        value: qwen2.5:0.5b
+  - type: web
+    name: arc-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
     envVars:
       - key: OLLAMA_BASE_URL
-        sync: false          # set to your Ollama endpoint, e.g. http://<host>:11434
+        fromService:
+          type: web
+          name: arc-ollama
+          property: hostport
       - key: ARC_API_KEY
-        generateValue: true  # mobile app must send: Authorization: Bearer <this>
+        generateValue: true
       - key: ARC_DATA_DIR
         value: /workspace
-      - key: GITHUB_TOKEN
-        sync: false          # optional

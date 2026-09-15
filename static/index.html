@@ -120,6 +120,8 @@ pre{background:#0a0e1a;border:1px solid var(--line);border-radius:9px;padding:9p
   <input class="f" id="s-p" placeholder="Primary (e.g. a Qwen model)">
   <input class="f" id="s-r" placeholder="Reasoning (e.g. a DeepSeek model)">
   <input class="f" id="s-c" placeholder="Critic (e.g. a Dolphin model)">
+  <h3>ARC access</h3>
+  <input class="f" id="s-api" placeholder="ARC API key (from your deploy)">
   <h3>Background tasks</h3>
   <input class="f" id="s-steps" type="number" placeholder="Max steps per task (default 50)">
   <button class="save" id="save-settings">Save</button>
@@ -137,6 +139,10 @@ pre{background:#0a0e1a;border:1px solid var(--line);border-radius:9px;padding:9p
 <div class="toast" id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),feed=$('#feed'),input=$('#input'),send=$('#send');
+const hdrs=()=>{const k=localStorage.arc_key||'';return k?{'Authorization':'Bearer '+k}:{}};
+async function AF(u,o={}){const r=await fetch(u,{...o,headers:{...(o.headers||{}),...hdrs()}});
+  if(r.status===401){toast('API key required');$('#settings').classList.add('on');loadSettings()}
+  return r}
 const API=location.origin;let session='s'+Date.now(),busy=false;
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -150,12 +156,12 @@ const closeSb=()=>{$('#sidebar').classList.remove('open');$('#scrim').classList.
 $('#sb-close').onclick=closeSb;$('#scrim').onclick=closeSb;
 $('#newchat').onclick=()=>{session='s'+Date.now();feed.innerHTML='';closeSb();toast('New chat')};
 async function loadRecents(){
-  const r=await(await fetch(API+'/sessions')).json();
+  const r=await(await AF(API+'/sessions')).json();
   $('#recents').innerHTML=(r.sessions||[]).map(s=>`<div class="rec" data-s="${esc(s.session)}">${esc(s.preview||s.session)}<small>${s.messages} msg</small></div>`).join('')||'<div class="rec" style="color:#7c89a8">No chats yet</div>';
   $('#recents').querySelectorAll('.rec[data-s]').forEach(el=>el.onclick=async()=>{session=el.dataset.s;await openSession();closeSb()});
 }
 async function openSession(){
-  feed.innerHTML='';const r=await(await fetch(API+'/sessions/'+session)).json();
+  feed.innerHTML='';const r=await(await AF(API+'/sessions/'+session)).json();
   for(const m of r.messages||[]){bubble(m.role,m.content)}
 }
 /* sheets */
@@ -166,10 +172,10 @@ $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')sheet('#
 $('#open-browser').onclick=()=>{closeSb();sheet('#browser',true)};
 $('#browser').addEventListener('click',e=>{if(e.target.id==='browser')sheet('#browser',false)});
 async function loadSettings(){
-  const r=await(await fetch(API+'/settings')).json();const s=r.settings||{};
+  const r=await(await AF(API+'/settings')).json();const s=r.settings||{};
   $('#s-base').value=s.ollama_base_url||r.defaults.ollama_base_url;
   $('#s-p').value=s.model_primary||'';$('#s-r').value=s.model_reasoning||'';$('#s-c').value=s.model_critic||'';
-  $('#s-key').value='';$('#s-steps').value=s.max_task_steps||'';
+  $('#s-key').value='';$('#s-steps').value=s.max_task_steps||'';$('#s-api').value=localStorage.arc_key||'';
   $('#s-key').placeholder=r.has_api_key?'API key set (leave blank to keep)':'API key (optional)';
 }
 $('#save-settings').onclick=async()=>{
@@ -178,11 +184,12 @@ $('#save-settings').onclick=async()=>{
   v('#s-base','ollama_base_url');v('#s-p','model_primary');v('#s-r','model_reasoning');v('#s-c','model_critic');
   if($('#s-key').value.trim())body.ollama_api_key=$('#s-key').value.trim();
   if($('#s-steps').value.trim())body.max_task_steps=parseInt($('#s-steps').value);
-  await fetch(API+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if($('#s-api').value.trim())localStorage.arc_key=$('#s-api').value.trim();
+  await AF(API+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   toast('Saved');sheet('#settings',false);
 };
 async function loadCaps(){
-  try{const c=await(await fetch(API+'/capabilities')).json();
+  try{const c=await(await AF(API+'/capabilities')).json();
     $('#caps').innerHTML=Object.entries(c).map(([k,v])=>`<div class="cap"><span>${k.toUpperCase()}</span><span class="st ${v.state}">${v.state}</span></div>`).join('');
   }catch(e){$('#caps').innerHTML='<div class="cap"><span>Control plane unreachable</span><span class="st ERROR">ERROR</span></div>'}
 }
@@ -190,13 +197,13 @@ async function loadCaps(){
 $('#b-shot').onclick=async()=>{
   const url=$('#b-url').value.trim();if(!url)return;
   $('#b-out').innerHTML='<div style="color:#7c89a8">Loading…</div>';
-  const r=await(await fetch(API+'/browse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,action:'screenshot'})})).json();
+  const r=await(await AF(API+'/browse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,action:'screenshot'})})).json();
   $('#b-out').innerHTML=r.screenshot?`<img src="${API+r.screenshot}" style="width:100%;border-radius:12px;border:1px solid #1c2742">`:`<div style="color:#ff5c7a">${esc(r.error||'failed')}</div>`;
 };
 $('#b-read').onclick=async()=>{
   const url=$('#b-url').value.trim();if(!url)return;
   $('#b-out').innerHTML='<div style="color:#7c89a8">Reading…</div>';
-  const r=await(await fetch(API+'/browse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,action:'extract'})})).json();
+  const r=await(await AF(API+'/browse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,action:'extract'})})).json();
   $('#b-out').innerHTML=`<div style="font-size:13px;line-height:1.5;max-height:260px;overflow-y:auto">${esc((r.text||r.error||'').slice(0,4000))}</div>`;
 };
 /* chat */
@@ -227,11 +234,11 @@ function renderTask(d,t){
   const steps=(t.steps||[]).slice(-6).map(s=>`• <b>${esc(s.kind)}</b> ${esc((s.detail||'').slice(0,80))}`).join('<br>');
   d.innerHTML=`<b>⏳ ${esc(t.goal.slice(0,90))}</b><div class="tstep">${steps||'starting…'}</div>
     <button class="tstop">■ Stop task</button>`;
-  d.querySelector('.tstop').onclick=async()=>{await fetch(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'stop',task_id:t.id})});toast('Task stopped')};
+  d.querySelector('.tstop').onclick=async()=>{await AF(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'stop',task_id:t.id})});toast('Task stopped')};
 }
 async function pollTask(id){
   const iv=setInterval(async()=>{
-    const r=await(await fetch(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'get',task_id:id})})).json();
+    const r=await(await AF(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'get',task_id:id})})).json();
     const d=document.getElementById('task-'+id);if(!d){clearInterval(iv);return}
     if(r.state&&r.state!=='running'){clearInterval(iv);renderTask(d,r);const s=document.createElement('div');s.className='msg arc';s.innerHTML=md('✅ Task finished: '+(r.result||r.state));feed.appendChild(s)}
     else renderTask(d,r);
@@ -244,12 +251,12 @@ async function go(){
   bubble('user',text);actBox=null;
   /* background task intent */
   if(/\b(task|background)\b/i.test(text)&&/^(arc[,:\s]*)?(do|start|run|make|create|build|research)\b/i.test(text.replace(/\btask\b/i,'task'))&&/in background|as a task|background task/i.test(text)){
-    const r=await(await fetch(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:text.replace(/.*background task:? ?/i,'')})})).json();
+    const r=await(await AF(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:text.replace(/.*background task:? ?/i,'')})})).json();
     taskCard(r);busy=false;send.disabled=false;return;
   }
   const d=bubble('arc','');
   try{
-    const res=await fetch(API+'/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,session})});
+    const res=await AF(API+'/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,session})});
     if(!res.ok){let j='';try{j=(await res.json()).detail}catch(e){}throw new Error(j||('HTTP '+res.status))}
     const rd=res.body.getReader(),dec=new TextDecoder();let buf='',ans='',started=false;
     while(true){const{done,value}=await rd.read();if(done)break;
@@ -265,7 +272,7 @@ async function go(){
   }catch(e){d.innerHTML=`<span style="color:#ff5c7a">⚠ ${esc(e.message||'connection lost')}</span>`}
   busy=false;send.disabled=false;input.focus();
 }
-async function boot(){try{const s=await(await fetch(API+'/status')).json();$('#dot').classList.toggle('off',s.ollama!=='READY')}catch(e){$('#dot').classList.add('off')}}
+async function boot(){try{const s=await(await AF(API+'/status')).json();$('#dot').classList.toggle('off',s.ollama!=='READY')}catch(e){$('#dot').classList.add('off')}}
 boot();
 </script>
 </body>
