@@ -10,10 +10,11 @@ import os
 import time
 import uuid
 
-from . import config as S
+from .config import get_settings
 
-WORKERS = os.path.join(S.DATA_DIR, "colab_workers.json")
-JOBS = os.path.join(S.DATA_DIR, "colab_jobs.json")
+S = get_settings()
+WORKERS = os.path.join(S.ARC_DATA_DIR, "colab_workers.json")
+JOBS = os.path.join(S.ARC_DATA_DIR, "colab_jobs.json")
 
 ONLINE_WINDOW = 300  # seconds
 
