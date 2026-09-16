@@ -48,8 +48,8 @@ def _looks_like_research(msg: str) -> bool:
 
 
 def _looks_like_terminal(msg: str) -> bool:
-    kws = ["install", "run", "execute", "terminal", "command", "shell", "bash",
-           "pip", "apt", "check if", "system", "process", "port"]
+    kws = ["install", "execute", "terminal", "command", "shell", "bash",
+           "pip", "apt", "sudo", "ls ", "cat ", "cd "]
     return _word_match(msg, kws)
 
 
@@ -195,6 +195,7 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
         # WORKFLOW MEMORY — context from past workflows
         memories = load_memories()
         ctx = "\n".join(f"- {m}" for m in memories[-MAX_CONTEXT_EVENTS:]) if memories else ""
+        streamed = False
 
         if kind == "image":
             prompt = _extract_image_prompt(msg)
@@ -279,6 +280,11 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
                         yield json.dumps({"event": "token", "text": tok}) + "\n"
                     if d.get("done"):
                         break
+                streamed = True
+
+        if not streamed and answer:
+            # terminal/research/image/colab branches: deliver the full answer
+            yield json.dumps({"event": "token", "text": answer}) + "\n"
 
         if answer is None:
             # council path didn't stream tokens; run it now
