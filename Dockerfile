@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 # Real Linux tooling for the ARC terminal + headless browser screenshots
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash curl wget git jq sqlite3 ca-certificates chromium \
+    bash curl wget git jq sqlite3 ca-certificates chromium ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

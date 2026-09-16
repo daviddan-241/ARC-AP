@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .config import get_settings
-from . import ollama, ires, capabilities, research, terminal, store, tasks, crypto, browser, colab
+from . import ollama, ires, capabilities, research, terminal, store, tasks, crypto, browser, colab, media
 
 S = get_settings()
 app = FastAPI(title="ARC", version="0.2.0",
@@ -214,8 +214,86 @@ async def browse_ep(body: dict, authorization: Optional[str] = Header(None)):
     return await browser.extract(url)
 
 
+# ---------- media lab: real image generation + image/video editing ----------
+class ImageGenIn(BaseModel):
+    prompt: str
+    width: int = 1024
+    height: int = 1024
+
+@app.post("/media/generate")
+async def media_generate(body: ImageGenIn, authorization: Optional[str] = Header(None)):
+    await _check_auth(authorization)
+    r = await media.generate_image(body.prompt, body.width, body.height)
+    if "error" in r:
+        raise HTTPException(502, r["error"])
+    return r
+
+
+@app.post("/media/upload")
+async def media_upload(request: Request, authorization: Optional[str] = Header(None)):
+    await _check_auth(authorization)
+    form = await request.form()
+    up = form.get("file")
+    if not up:
+        raise HTTPException(400, "file required (multipart form field 'file')")
+    ext = (up.filename or "upload.bin").rsplit(".", 1)[-1].lower()
+    path, media_url = media._new_path(ext if ext else "bin")
+    data = await up.read()
+    with open(path, "wb") as f:
+        f.write(data)
+    return {"path": path, "url": media_url, "bytes": len(data)}
+
+
+class ImageEditIn(BaseModel):
+    path: str
+    action: str
+    arg: Optional[str] = None
+
+@app.post("/media/edit-image")
+async def media_edit_image(body: ImageEditIn, authorization: Optional[str] = Header(None)):
+    await _check_auth(authorization)
+    real = os.path.realpath(body.path)
+    if not real.startswith(os.path.realpath(media.MEDIA_DIR)) or not os.path.isfile(real):
+        raise HTTPException(400, "unknown source path — upload the image first via /media/upload")
+    r = media.edit_image(real, body.action, body.arg)
+    if "error" in r:
+        raise HTTPException(422, r["error"])
+    return r
+
+
+class VideoEditIn(BaseModel):
+    path: str
+    action: str
+    arg: Optional[str] = None
+
+@app.post("/media/edit-video")
+async def media_edit_video(body: VideoEditIn, authorization: Optional[str] = Header(None)):
+    await _check_auth(authorization)
+    real = os.path.realpath(body.path)
+    if not real.startswith(os.path.realpath(media.MEDIA_DIR)) or not os.path.isfile(real):
+        raise HTTPException(400, "unknown source path — upload the video first via /media/upload")
+    r = media.edit_video(real, body.action, body.arg)
+    if "error" in r:
+        raise HTTPException(422, r["error"])
+    return r
+
+
+@app.get("/media/library")
+async def media_library(authorization: Optional[str] = Header(None)):
+    await _check_auth(authorization)
+    return {"items": media.list_library()}
+
+
+@app.get("/media/lib/{fname}")
+async def media_lib_file(fname: str):
+    path = os.path.realpath(os.path.join(media.MEDIA_DIR, fname))
+    if not path.startswith(os.path.realpath(media.MEDIA_DIR)) or not os.path.isfile(path):
+        raise HTTPException(404)
+    return FileResponse(path)
+
+
 @app.get("/media/browser/{fname}")
-async def media(fname: str):
+async def media_browser_file(fname: str):
     path = os.path.realpath(os.path.join(S.ARC_DATA_DIR, "output", "browser", fname))
     if not path.startswith(os.path.realpath(S.ARC_DATA_DIR)) or not os.path.isfile(path):
         raise HTTPException(404)

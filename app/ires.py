@@ -19,6 +19,7 @@ from . import ollama
 from .research import research_web
 from .terminal import run_command
 from .store import append_workflow_memory, load_memories
+from . import media as _media
 
 MAX_CONTEXT_EVENTS = 12  # how many memory entries feed the model
 
@@ -57,10 +58,30 @@ def _looks_like_colab(msg: str) -> bool:
     return _word_match(msg, kws)
 
 
+_IMG_TRIGGERS = re.compile(
+    r"\b(generate|create|make|draw|paint|design)\b.{0,15}\b(an?\s+)?(image|picture|photo|illustration|artwork|icon|logo|wallpaper)\b",
+    re.I)
+
+
+def _looks_like_image_gen(msg: str) -> bool:
+    return bool(_IMG_TRIGGERS.search(msg))
+
+
+def _extract_image_prompt(msg: str) -> str:
+    m = re.split(r"\b(of|showing|depicting|with)\b", msg, maxsplit=1, flags=re.I)
+    if len(m) >= 3:
+        return m[2].strip().rstrip(".!")
+    # strip the trigger phrase itself and use the remainder
+    cleaned = _IMG_TRIGGERS.sub("", msg, count=1).strip(" .,:!-")
+    return cleaned or msg
+
+
 async def _classify(msg: str) -> str:
     """Understand: classify the task honestly with the primary model (fast path: heuristics)."""
     if "colab status" in msg.lower():
         return "colab_status"
+    if _looks_like_image_gen(msg):
+        return "image"
     if _looks_like_colab(msg) and len(msg) > 40:
         return "colab"
     if _looks_like_research(msg):
@@ -175,7 +196,16 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
         memories = load_memories()
         ctx = "\n".join(f"- {m}" for m in memories[-MAX_CONTEXT_EVENTS:]) if memories else ""
 
-        if kind == "research":
+        if kind == "image":
+            prompt = _extract_image_prompt(msg)
+            yield json.dumps(act("forging", f"Generating image: {prompt[:60]}")) + "\n"
+            r = await _media.generate_image(prompt)
+            if "error" in r:
+                yield json.dumps({"event": "error", "detail": r["error"]}) + "\n"
+                return
+            yield json.dumps({"event": "media", "kind": "image", "url": r["url"], "prompt": prompt}) + "\n"
+            answer = f"Generated: \"{prompt}\""
+        elif kind == "research":
             yield json.dumps(act("scouting", "Scouting the web for sources")) + "\n"
             report, sources = await research_web(msg)
             yield json.dumps(act("studying", f"Studying {len(sources)} sources")) + "\n"
