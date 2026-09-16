@@ -90,6 +90,40 @@ async def _council_answer(msg: str, history: list, emit) -> str:
                 return await ollama.generate_text(fb, prompt, system=system, num_predict=n)
             raise
 
+    # MIXED COUNCIL: when the roster holds multiple distinct models, all three
+    # reason together — each contributes its own strength and cross-checks the others.
+    import asyncio
+    mixed = len({m_reason, m_spec, m_critic} - {None}) >= 2
+    if mixed:
+        emit(act("pondering", f"Council mix: {m_spec} (reasoning/coding) + {m_critic} (creative) + {m_reason} (fast perspective)"))
+        plan = await safe(m_reason,
+            f"Task: {msg}\nBreak this into 2-4 concrete steps. Be terse, one line per step.",
+            system="You are ARC's planner. Output a numbered plan only.", n=200)
+
+        emit(act("forging", "Three models drafting in parallel — cross-checking begins"))
+        draft_acc, draft_creative = await asyncio.gather(
+            safe(m_spec,
+                f"Plan:\n{plan}\n\nTask: {msg}\nWrite the best direct answer. Prioritize accuracy, logic and working code.",
+                system="You are ARC's specialist. Answer accurately and completely.", n=900),
+            safe(m_critic,
+                f"Plan:\n{plan}\n\nTask: {msg}\nWrite an alternative take on the answer. Be creative, direct, unconstrained by convention. Different angle from the obvious approach.",
+                system="You are ARC's creative mind. Give a genuinely different, useful perspective.", n=500),
+        )
+
+        emit(act("pondering", "Fast perspective cross-checking both drafts"))
+        critique = await safe(m_reason,
+            f"Draft A (accurate):\n{draft_acc}\n\nDraft B (creative):\n{draft_creative}\n\n"
+            "Compare both. List up to 3 concrete corrections or the best ideas to merge. If both solid, say 'SOLID'.",
+            system="You are ARC's cross-checker. Be blunt and brief.", n=250)
+
+        emit(act("weaving", "Synthesizing the merged answer"))
+        final = await safe(m_spec,
+            f"Draft A:\n{draft_acc}\n\nDraft B:\n{draft_creative}\n\nCross-check notes:\n{critique}\n\n"
+            "Merge the best of both drafts, apply the corrections, and produce the final polished answer for the user.",
+            system="You are ARC. Final answer only, no meta commentary.", n=900)
+        return final
+
+    # single-model fallback: sequential council with whatever model exists
     emit(act("pondering", "Convening the council — planning the approach"))
     plan = await safe(m_reason,
         f"Task: {msg}\nBreak this into 2-4 concrete steps. Be terse, one line per step.",

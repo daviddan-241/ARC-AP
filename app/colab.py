@@ -32,24 +32,61 @@ def _save(path, data):
         json.dump(data, f)
 
 
-def register(name: str = "colab", gpu: str = "") -> dict:
+def register(name: str = "colab", gpu: str = "", models: list | None = None) -> dict:
     workers = _load(WORKERS)
     wid = str(uuid.uuid4())[:12]
-    rec = {"id": wid, "name": name, "gpu": gpu, "first_seen": time.time(), "last_seen": time.time()}
+    rec = {"id": wid, "name": name, "gpu": gpu, "models": models or [],
+           "first_seen": time.time(), "last_seen": time.time()}
     workers = [w for w in workers if w.get("id") != wid]
     workers.append(rec)
     _save(WORKERS, workers)
     return rec
 
 
-def heartbeat(worker_id: str) -> bool:
+def heartbeat(worker_id: str, models: list | None = None) -> bool:
     workers = _load(WORKERS)
     for w in workers:
         if w["id"] == worker_id:
             w["last_seen"] = time.time()
+            if models is not None:
+                w["models"] = models
             _save(WORKERS, workers)
             return True
     return False
+
+
+def online_worker_with_model(model: str) -> dict | None:
+    """An online worker that serves the given ollama model."""
+    workers = _load(WORKERS)
+    fresh = [w for w in workers if time.time() - w.get("last_seen", 0) < ONLINE_WINDOW]
+    for w in fresh:
+        if model in (w.get("models") or []):
+            return w
+    return None
+
+
+def online_models() -> list:
+    """All models served by online workers (unique)."""
+    workers = _load(WORKERS)
+    fresh = [w for w in workers if time.time() - w.get("last_seen", 0) < ONLINE_WINDOW]
+    seen, out = set(), []
+    for w in fresh:
+        for m in (w.get("models") or []):
+            if m not in seen:
+                seen.add(m)
+                out.append(m)
+    return out
+
+
+def wait_result(job_id: str, timeout: float = 280.0):
+    """Block until a job finishes; returns (ok, output) or raises TimeoutError."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        for j in _load(JOBS):
+            if j["id"] == job_id and j["status"] in ("done", "failed"):
+                return j["status"] == "done", j.get("result") or ""
+        time.sleep(1)
+    raise TimeoutError(f"colab job {job_id} timed out after {timeout:.0f}s")
 
 
 def online_worker() -> dict | None:
@@ -101,7 +138,8 @@ def status() -> dict:
     done = sum(1 for j in jobs if j["status"] in ("done", "failed"))
     recent = sorted(jobs, key=lambda j: -j["updated"])[:10]
     return {"worker_online": bool(w),
-            "worker": {"name": w["name"], "gpu": w.get("gpu", "")} if w else None,
+            "worker": ({"name": w["name"], "gpu": w.get("gpu", ""), "models": w.get("models") or []}
+                       if w else None),
             "jobs": {"pending": pending, "running": running, "done": done},
             "recent": [{"id": j["id"], "title": j["title"], "status": j["status"],
                         "updated": j["updated"]} for j in recent]}

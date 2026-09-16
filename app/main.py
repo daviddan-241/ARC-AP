@@ -51,6 +51,7 @@ class FileIn(BaseModel):
     action: str = "read"
 
 class ColabIn(BaseModel):
+    models: Optional[list] = None
     action: str                # register|heartbeat|result|job|status|jobs (worker actions unauth: register/heartbeat/result/next)
     worker_id: Optional[str] = None
     job_id: Optional[str] = None
@@ -268,9 +269,9 @@ async def colab_route(body: ColabIn, authorization: Optional[str] = Header(None)
     await _check_auth(authorization)
     a = body.action
     if a == "register":
-        return colab.register(body.name or "colab", body.gpu or "")
+        return colab.register(body.name or "colab", body.gpu or "", models=body.models)
     if a == "heartbeat":
-        ok = colab.heartbeat(body.worker_id or "")
+        ok = colab.heartbeat(body.worker_id or "", models=body.models)
         return {"ok": ok} if ok else JSONResponse({"error": "unknown worker"}, status_code=404)
     if a == "next":
         j = colab.next_job(body.worker_id or "")
@@ -414,6 +415,14 @@ async def security_lab(body: dict, authorization: Optional[str] = Header(None)):
 
 # ---------- UI ----------
 _static = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+@app.get("/icon.png")
+async def icon():
+    return FileResponse(os.path.join(_static, "icon.png"), media_type="image/png")
+
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse(os.path.join(_static, "manifest.json"), media_type="application/json")
+
 app.mount("/ui", StaticFiles(directory=_static, html=True), name="ui")
 
 @app.get("/")

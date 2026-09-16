@@ -1,0 +1,22 @@
+{
+ "name": "ARC \u2014 AI Operating System",
+ "short_name": "ARC",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#07090f",
+ "theme_color": "#07090f",
+ "icons": [
+  {
+   "src": "/icon.png",
+   "sizes": "1024x1024",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon.png",
+   "sizes": "1024x1024",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

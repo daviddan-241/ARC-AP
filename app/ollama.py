@@ -104,6 +104,14 @@ async def detect_council() -> dict:
     Only ever returns models that ACTUALLY exist on the endpoint."""
     ov = _overlay()
     installed = await list_models(wake_retry=True)
+    # merge models served by an online Colab GPU worker (reachable via the job bridge)
+    try:
+        from . import colab as _colab
+        for m in _colab.online_models():
+            if m not in installed:
+                installed.append(m)
+    except Exception:
+        pass
 
     def pick(*families) -> Optional[str]:
         for fam in families:
@@ -132,8 +140,37 @@ async def detect_council() -> dict:
             "installed": installed, "endpoint": _base()}
 
 
+async def _generate_via_colab(model: str, prompt: str, system: Optional[str],
+                                num_predict: int, temperature: float) -> Optional[str]:
+    """Run generate on a Colab worker's local ollama via the job bridge. None if no worker serves it."""
+    try:
+        from . import colab as _colab
+    except Exception:
+        return None
+    if not _colab.online_worker_with_model(model):
+        return None
+    payload = {"model": model, "prompt": prompt, "stream": False,
+               "options": {"num_predict": num_predict, "temperature": temperature}}
+    if system:
+        payload["system"] = system
+    code = (
+        "import requests\n"
+        f"payload = {payload!r}\n"
+        "r = requests.post('http://127.0.0.1:11434/api/generate', json=payload, timeout=240)\n"
+        "print(r.json().get('response', ''))\n"
+    )
+    job = _colab.create_job(title=f"ollama_generate:{model}", code=code)
+    ok, out = _colab.wait_result(job["id"], timeout=300)
+    if not ok:
+        raise RuntimeError(f"colab ollama job failed: {out[:200]}")
+    return out
+
+
 async def generate_text(model: str, prompt: str, system: Optional[str] = None,
                         num_predict: int = 1024, temperature: float = 0.7) -> str:
+    via_colab = await _generate_via_colab(model, prompt, system, num_predict, temperature)
+    if via_colab is not None:
+        return via_colab
     if await _is_native():
         payload = {"model": model, "prompt": prompt, "stream": False,
                    "options": {"num_predict": num_predict, "temperature": temperature}}
