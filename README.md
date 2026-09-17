@@ -51,6 +51,18 @@ Note: Render free web services have 512MB RAM and sleep when idle — they canno
 models themselves. Point `OLLAMA_BASE_URL` at Ollama Cloud (https://ollama.com, has
 Qwen and DeepSeek families) or your own always-on Ollama host.
 
+## Live deployment (current)
+| Piece | Where | Status |
+|---|---|---|
+| ARC chat UI + API | https://arc-api-d151.onrender.com | Live. `/chat/stream` serves real Ollama inference end-to-end (verified: streamed answer via the fallback host, ~0.6 tok/s on the free tier) |
+| Fallback model host | https://arc-ollama-host.onrender.com | Live. Ollama + `smollm2:135m` (fits the 512MB free container) |
+| Colab T4 GPU worker | [colab/ARC_Colab_Agent.ipynb](https://colab.research.google.com/github/daviddan-241/ARC-AP/blob/main/colab/ARC_Colab_Agent.ipynb) | On demand: open in Colab, T4 GPU runtime, paste your ARC API key in cell 1 (this repo is public, so the key is NOT pre-filled), Run all. Worker self-expires 5 min after the last heartbeat. |
+| Model council | dolphin-llama3:8b · qwen2.5:7b-instruct · dolphin-mistral:7b-v2.8-q3_K_M | Served by the Colab worker when online; ARC falls back to the Render host model otherwise |
+| GODWIN-NEXO-BOT | [daviddan-241/GODWIN-NEXO-BOT](https://github.com/daviddan-241/GODWIN-NEXO-BOT) | Runs on the ARC sandbox (Telegram polling, no public URL); Render free-tier accounts are quota-exhausted for new boots until Oct 1 2026 |
+
+The `/colab` bridge is live: `POST /colab {"action":"register", ...}` → `GET /colab/status` shows the
+worker (round-trip verified in production, 2026-09-17).
+
 ## Honesty rules (built in)
 - Capability matrix reports REAL states only (READY / DEGRADED / NOT_CONFIGURED / OFFLINE / ERROR).
 - No fake inference, no fabricated balances, trades, or deployments.
