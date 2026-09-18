@@ -1,0 +1,17 @@
+name: ARC Keep Alive
+# Pings the ARC control plane every 15 minutes so the free-tier Render service
+# never spins down. The Ollama model host is intentionally NOT pinged: Render
+# free = 750 instance-hours/month, one always-on service fits, two do not.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping arc-api
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 https://arc-api-d151.onrender.com/health)
+          echo "arc-api /health -> $code"
+          if [ "$code" != "200" ]; then exit 1; fi
