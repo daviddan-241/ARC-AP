@@ -173,7 +173,8 @@ async def generate_text(model: str, prompt: str, system: Optional[str] = None,
         return via_colab
     if await _is_native():
         payload = {"model": model, "prompt": prompt, "stream": False,
-                   "options": {"num_predict": num_predict, "temperature": temperature}}
+                   "options": {"num_predict": num_predict, "temperature": temperature,
+                               "num_ctx": 1024}}
         if system:
             payload["system"] = system
         base = _base().rstrip("/")
@@ -208,21 +209,34 @@ async def generate_stream(model: str, prompt: str, system: Optional[str] = None,
                           num_predict: int = 1024, temperature: float = 0.7) -> AsyncGenerator[str, None]:
     """Yields NDJSON lines (native format) so the UI token stream is uniform."""
     if await _is_native():
+        # num_ctx is capped: on the 512MB free-tier host the default 4096-token
+        # KV cache (~100MB for qwen-class models) OOM-kills the container mid-chat.
         payload = {"model": model, "prompt": prompt, "stream": True,
-                   "options": {"num_predict": num_predict, "temperature": temperature}}
+                   "options": {"num_predict": num_predict, "temperature": temperature,
+                               "num_ctx": 1024}}
         if system:
             payload["system"] = system
-        client = httpx.AsyncClient(timeout=300)
-        try:
-            async with client.stream("POST", f"{_base().rstrip('/')}/api/generate",
-                                     json=payload, headers=_headers()) as r:
-                if r.status_code != 200:
-                    raise RuntimeError(f"ollama HTTP {r.status_code}")
-                async for line in r.aiter_lines():
-                    if line.strip():
-                        yield line
-        finally:
-            await client.aclose()
+        import asyncio
+        for attempt in range(3):
+            client = httpx.AsyncClient(timeout=300)
+            try:
+                async with client.stream("POST", f"{_base().rstrip('/')}/api/generate",
+                                         json=payload, headers=_headers()) as r:
+                    if r.status_code != 200:
+                        # 502/503 = host cold-booting (re-pulling its model).
+                        # Wait through the boot window instead of failing the chat.
+                        if r.status_code in (502, 503) and attempt < 2:
+                            await client.aclose()
+                            await asyncio.sleep(35)
+                            continue
+                        raise RuntimeError(f"ollama HTTP {r.status_code}")
+                    async for line in r.aiter_lines():
+                        if line.strip():
+                            yield line
+                    await client.aclose()
+                    return
+            finally:
+                await client.aclose()
         return
     # OpenAI-compatible SSE → convert to native-ish NDJSON
     msgs = ([{"role": "system", "content": system}] if system else []) + \
