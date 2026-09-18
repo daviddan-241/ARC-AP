@@ -290,6 +290,7 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
         elif kind == "terminal":
             yield json.dumps(act("computing", "Preparing isolated execution")) + "\n"
             cmd = msg.strip().lstrip("$").strip()
+            cmd = re.sub(r"^(please\s+)?(run|execute|exec|launch|start)\s+(?=[a-z/.~])", "", cmd, flags=re.I)
             result = run_command(cmd)
             answer = f"$ {cmd}\n\n{result['stdout']}\n" + (f"\n[stderr] {result['stderr']}" if result["stderr"] else "") + \
                      (f"\n[exit {result['exit_code']}]" if result["exit_code"] != 0 else "")
