@@ -673,7 +673,7 @@ function bubble(role,text){
   const d=document.createElement('div');d.className='msg '+(role==='user'||role==='me'?'user':'arc');
   d.innerHTML=md(text);feed.appendChild(d);feed.scrollTop=feed.scrollHeight;checkGreet();return d;
 }
-let thBox=null;
+let thBox=null,thoughtsSettled=false;
 function thoughts(){
   if(!thBox){
     thBox=document.createElement('div');thBox.className='thoughts busy';
@@ -684,6 +684,10 @@ function thoughts(){
   return thBox;
 }
 function activity(ev){
+  // Once thoughts have settled for this turn, any late/stray activity event
+  // (e.g. a trailing "done" arriving after tokens already finished) is a
+  // no-op — never resurrect a new orphaned Thoughts/Done pill below the answer.
+  if(thoughtsSettled)return;
   const t=thoughts();
   t.querySelector('.th-lab').textContent=ev.label||ev.type;
   const row=document.createElement('div');row.className='th-row run';
@@ -691,8 +695,10 @@ function activity(ev){
   t.querySelector('.th-body').appendChild(row);
   t.querySelectorAll('.th-row.run').forEach(r=>{if(r!==row){r.classList.remove('run');r.querySelector('.tick').textContent='✓'}});
   feed.scrollTop=feed.scrollHeight;
+  if((ev.label||ev.type)==='done'||(ev.type==='done'))settleThoughts();
 }
 function settleThoughts(){
+  thoughtsSettled=true;
   if(!thBox)return;
   thBox.classList.remove('busy');thBox.querySelector('.th-lab').textContent='Thoughts';
   thBox.querySelectorAll('.th-row.run').forEach(r=>{r.classList.remove('run');r.querySelector('.tick').textContent='✓'});
@@ -727,7 +733,7 @@ async function pollTask(id){
 async function go(){
   const text=input.value.trim();if(!text)return;
   input.value='';input.style.height='auto';busy=true;send.disabled=true;
-  bubble('user',text);thBox=null;
+  bubble('user',text);thBox=null;thoughtsSettled=false;
   if(/\b(task|background)\b/i.test(text)&&/^(arc[,:\s]*)?(do|start|run|make|create|build|research)\b/i.test(text.replace(/\btask\b/i,'task'))&&/in background|as a task|background task/i.test(text)){
     const r=await(await AF(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:text.replace(/.*background task:? ?/i,'')})})).json();
     taskCard(r);busy=false;send.disabled=false;return;
