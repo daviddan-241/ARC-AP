@@ -31,6 +31,7 @@ def act(kind: str, detail: str) -> dict:
 KIND_LABELS = {
     "pondering": "Pondering", "scouting": "Scouting", "computing": "Computing",
     "forging": "Forging", "studying": "Studying", "weaving": "Weaving",
+    "waking": "Waking",
 }
 
 
@@ -186,11 +187,21 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
         def emit(e: dict):
             emit_buffer.append(e)
 
-        # CAPABILITY CHECK (real)
+        # CAPABILITY CHECK (real) — with cold-start wake: free-tier hosts sleep
+        # and re-pull their model on wake (~60-90s); poll through that window
+        # instead of failing the chat with a 502.
         council = await ollama.detect_council()
         if not council["primary"]:
-            yield json.dumps({"event": "error", "detail": "Ollama reachable but no models installed."}) + "\n"
-            return
+            import asyncio as _aio
+            yield json.dumps(act("waking", "Model host asleep - waking it (can take up to 3 min)")) + "\n"
+            for _ in range(10):  # 10 x 15s = 150s max
+                await _aio.sleep(15)
+                council = await ollama.detect_council()
+                if council["primary"]:
+                    break
+            if not council["primary"]:
+                yield json.dumps({"event": "error", "detail": "Model host is still waking up - please try again in a minute."}) + "\n"
+                return
 
         # WORKFLOW MEMORY — context from past workflows
         memories = load_memories()
