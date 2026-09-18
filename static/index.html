@@ -16,11 +16,11 @@ html,body{height:100%;overscroll-behavior:none}
 body{background:var(--bg);color:var(--text);font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 #app{display:flex;height:100dvh}
 /* ================= DRAWER ================= */
-#sidebar{position:fixed;left:0;top:0;bottom:0;width:288px;max-width:82vw;background:var(--panel);border-right:1px solid var(--line);transform:translateX(-100%);transition:.26s;z-index:12;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+#sidebar{position:fixed;left:0;top:0;bottom:0;width:288px;max-width:84vw;background:var(--panel);border-right:1px solid var(--line);transform:translateX(-100%);transition:.26s;z-index:12;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 #sidebar.open{transform:none;box-shadow:8px 0 30px rgba(0,0,0,.08)}
-#sb-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 12px}
-#sb-head b{font-size:24px;font-weight:700;letter-spacing:-.5px}
-.sb-btn{background:var(--panel2);border:none;color:var(--text);border-radius:13px;padding:12px 14px;font-size:14.5px;font-weight:600;cursor:pointer;margin:0 14px 12px;text-align:left;display:flex;align-items:center;gap:8px}
+#sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+#sb-head b{font-size:22px;font-weight:700;letter-spacing:-.5px}
+.sb-btn{background:var(--panel2);border:none;color:var(--text);border-radius:13px;padding:11px 14px;font-size:14.5px;font-weight:600;cursor:pointer;margin:0 12px 8px;text-align:left;display:flex;align-items:center;gap:9px;width:calc(100% - 24px)}
 .sb-btn:active{background:rgba(60,60,67,.08)}
 .sb-section{padding:10px 16px 6px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
 #recents{flex:1;overflow-y:auto;padding:0 10px}
@@ -32,38 +32,36 @@ body{background:var(--bg);color:var(--text);font:-apple-system,BlinkMacSystemFon
 .nav-btn .ico{width:26px;text-align:center}
 #scrim{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:11;display:none}
 #scrim.on{display:block}
-/* ================= SCREENS ================= */
+/* ================= MAIN / CHAT ================= */
 #main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
-.screen{position:absolute;inset:0;background:var(--bg);transform:translateX(100%);transition:.26s ease;z-index:8;display:flex;flex-direction:column;overflow:hidden}
-.screen.on{transform:none;z-index:9}
-.screen header{border-bottom:1px solid var(--line);background:rgba(242,242,247,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top))}
-/* ---- chat header ---- */
-#chatbar{display:flex;align-items:center;gap:10px}
+#main header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));border-bottom:1px solid var(--line);background:rgba(242,242,247,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);position:relative;z-index:2}
 .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11.5px;color:#fff;box-shadow:var(--shadow)}
-#chatbar b{font-size:20px;font-weight:700;letter-spacing:-.4px}
+#main header b{font-size:20px;font-weight:700;letter-spacing:-.4px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px rgba(52,199,89,.55)}
 .dot.off{background:var(--err);box-shadow:0 0 6px rgba(255,59,48,.55)}
 .icon-btn{background:none;border:none;color:var(--iosblue);font-size:20px;cursor:pointer;padding:6px 8px;min-width:32px}
-/* model pill */
 #modelpill{margin-left:auto;display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);color:var(--text)}
 #modelpill .chev{color:var(--dim);font-size:10px}
-#modelmenu{position:absolute;right:12px;top:calc(54px + env(safe-area-inset-top));background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 34px rgba(0,0,0,.14);padding:7px;display:none;z-index:15;min-width:230px}
+#modelmenu{position:absolute;right:12px;top:calc(54px + env(safe-area-inset-top));background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 34px rgba(0,0,0,.14);padding:7px;display:none;z-index:15;min-width:236px}
 #modelmenu.on{display:block}
 #modelmenu .mi{padding:9px 11px;border-radius:10px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 #modelmenu .mi b{font-size:13.5px;font-weight:600}
 #modelmenu .mi small{color:var(--dim);font-weight:400}
 #modelmenu .mtip{padding:8px 11px 4px;font-size:11.5px;color:var(--dim);line-height:1.45}
-/* ---- feed ---- */
+/* feed */
 #feed{flex:1;overflow-y:auto;padding:18px 14px calc(16px + var(--sb));-webkit-overflow-scrolling:touch}
-#greet{max-width:640px;margin:0 auto;text-align:center;padding:16vh 10px 0;display:none}
-#greet .big{font-size:34px;font-weight:800;letter-spacing:-.8px;line-height:1.2}
-#greet .sub{color:var(--dim);font-size:15.5px;margin-top:10px;line-height:1.5}
-/* messages */
 .msg{max-width:82%;margin:0 0 14px;padding:12px 15px;border-radius:19px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;font-size:16px;animation:up .24s ease}
 @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .user{margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));border-bottom-right-radius:6px;color:#fff;box-shadow:var(--shadow)}
 .arc{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
-/* thoughts panel */
+/* greeting */
+#greet{display:none;max-width:640px;margin:0 auto;text-align:center;padding:13vh 10px 0}
+#greet.on{display:block}
+.sparkwrap{width:96px;height:96px;margin:0 auto 22px;animation:pulse 3.2s ease-in-out infinite;filter:drop-shadow(0 6px 22px rgba(108,140,255,.35))}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+#greet .big{font-size:33px;font-weight:800;letter-spacing:-.8px;line-height:1.22;background:linear-gradient(100deg,#34c759 0%,#00c6ff 35%,#6c8cff 65%,#af52de 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#greet .sub{color:var(--dim);font-size:15px;margin-top:12px;line-height:1.5}
+/* thoughts */
 .thoughts{max-width:82%;margin:0 0 8px}
 .th-bar{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:8px 13px;font-size:13.5px;color:var(--dim);cursor:pointer;box-shadow:var(--shadow);font-weight:500}
 .th-bar .spin{width:12px;height:12px;border:2px solid rgba(108,140,255,.25);border-top-color:var(--accent);border-radius:50%;animation:rot 0.9s linear infinite;display:none}
@@ -74,47 +72,95 @@ body{background:var(--bg);color:var(--text);font:-apple-system,BlinkMacSystemFon
 .thoughts.open .th-body{display:block}
 .th-row{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.45;color:#3a3a3c}
 .th-row:last-child{border-bottom:none}
-.th-row .tick{color:var(--ok);flex-shrink:0}
+.th-row .tick{color:var(--ok);flex-shrink:0;font-weight:700}
 .th-row.run .tick{color:var(--iosblue)}
 .th-row small{display:block;color:var(--dim);margin-top:2px;word-break:break-word}
-/* question card */
+/* cards */
 .qcard{background:var(--panel);border:1px solid var(--line);border-radius:19px;padding:15px;margin:0 0 14px;max-width:82%;box-shadow:var(--shadow)}
 .qcard .qt{font-size:15.5px;margin-bottom:11px}
 .qopt{display:block;width:100%;background:var(--bg);border:1px solid var(--line);color:var(--iosblue);border-radius:12px;padding:12px;margin-bottom:8px;font-size:15px;font-weight:500;cursor:pointer;text-align:left}
 .qopt:active{background:rgba(0,122,255,.08)}
-/* task card */
 .tcard{background:var(--panel);border:1px solid var(--line);border-radius:19px;padding:14px 15px;margin:0 0 14px;max-width:82%;font-size:14px;box-shadow:var(--shadow)}
 .tcard b{font-size:14.5px}
 .tstep{color:var(--dim);margin-top:7px;line-height:1.55;max-height:150px;overflow-y:auto}
 .tstop{background:none;border:none;color:var(--err);font-size:13px;font-weight:600;margin-top:9px;cursor:pointer;padding:0}
-/* browser + media cards */
 .bcard,.mcard{background:var(--panel);border:1px solid var(--line);border-radius:19px;margin:0 0 14px;max-width:82%;overflow:hidden;box-shadow:var(--shadow)}
 .bcard img,.mcard img{width:100%;display:block}
 .bcard .bbar{display:flex;align-items:center;gap:8px;padding:10px 13px;font-size:12.5px;color:var(--dim)}
 .mcard .mbar{padding:10px 13px;font-size:12.5px;color:var(--dim);display:flex;justify-content:space-between}
+/* suggestion chips */
+#chips{display:none;gap:8px;overflow-x:auto;padding:8px 14px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#chips.on{display:flex}
+#chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-size:13.5px;font-weight:500;cursor:pointer;box-shadow:var(--shadow);color:var(--text)}
+.chip:active{background:rgba(108,140,255,.1)}
 /* composer */
-#composer{padding:9px 12px calc(12px + var(--sb));border-top:1px solid var(--line);background:rgba(242,242,247,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
-#row{display:flex;gap:9px;align-items:flex-end;max-width:740px;margin:0 auto}
-#input{flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:21px;color:var(--text);font-size:16px;padding:12px 16px;resize:none;max-height:110px;font-family:inherit;outline:none;box-shadow:var(--shadow)}
-#input:focus{border-color:var(--accent)}
-#input::placeholder{color:#c0c0c8}
-#send{width:42px;height:42px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;box-shadow:var(--shadow)}
+#composer{padding:6px 12px calc(12px + var(--sb));background:rgba(242,242,247,.9);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+#pill{display:flex;align-items:flex-end;gap:8px;max-width:740px;margin:0 auto;background:var(--panel);border:1px solid var(--line2);border-radius:24px;padding:6px 6px 6px 4px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+#plus{width:36px;height:36px;border-radius:50%;border:none;background:var(--panel2);font-size:18px;color:var(--dim);cursor:pointer;flex-shrink:0}
+#input{flex:1;background:none;border:none;color:var(--text);font-size:16px;padding:8px 4px;resize:none;max-height:110px;font-family:inherit;outline:none}
+#input::placeholder{color:#b8b8bf}
+#mic{width:36px;height:36px;border-radius:50%;border:none;background:var(--panel2);font-size:15px;cursor:pointer;flex-shrink:0}
+#mic.rec{background:#ff3b30;color:#fff;animation:pulse 1.2s infinite}
+#send{width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;cursor:pointer;flex-shrink:0}
 #send:disabled{opacity:.35}
-/* ================= PLUGINS / LIBRARY / SETTINGS ================= */
+/* ================= SCREENS ================= */
+.screen{position:absolute;inset:0;background:var(--bg);transform:translateX(100%);transition:.26s ease;z-index:8;display:flex;flex-direction:column;overflow:hidden}
+.screen.on{transform:none;z-index:9}
+.screen header{display:flex;align-items:center;border-bottom:1px solid var(--line);background:rgba(242,242,247,.86);backdrop-filter:blur(18px);padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top))}
 .stitle{font-size:28px;font-weight:800;letter-spacing:-.6px;padding:14px 16px 4px}
 .ssub{color:var(--dim);font-size:14px;padding:0 16px 14px}
 .psearch{margin:0 16px 14px;display:flex;align-items:center;gap:8px;background:rgba(118,118,128,.12);border-radius:11px;padding:10px 12px}
 .psearch input{background:none;border:none;outline:none;font-size:15.5px;flex:1;color:var(--text);font-family:inherit}
 .plist{flex:1;overflow-y:auto;padding:0 16px calc(20px + var(--sb))}
 .grp{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600;padding:16px 12px 8px}
+/* installed icon row */
+.irow{display:flex;gap:14px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.irow::-webkit-scrollbar{display:none}
+.icard{flex-shrink:0;text-align:center;width:64px;cursor:pointer}
+.icard .ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:23px;color:#fff;margin:0 auto;box-shadow:var(--shadow)}
+.icard .ic.off{filter:grayscale(.9);opacity:.55}
+.icard span{display:block;font-size:11px;color:var(--dim);margin-top:5px;line-height:1.2}
+/* plugin cards */
 .pcard{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:9px;box-shadow:var(--shadow)}
 .pcard .pic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;color:#fff}
 .pcard .pmain{flex:1;min-width:0}
 .pcard .pname{font-size:15px;font-weight:600}
 .pcard .pdesc{font-size:12.5px;color:var(--dim);margin-top:2px;line-height:1.4}
-.st{font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 8px;border-radius:99px;flex-shrink:0}
-.READY{color:#1e9e4b;background:rgba(52,199,89,.13)}.DEGRADED{color:#c77700;background:rgba(255,149,0,.13)}.NOT_CONFIGURED,.OFFLINE,.ERROR{color:#d70015;background:rgba(255,59,48,.12)}
-/* settings grouped list */
+.pbtn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-size:15px;cursor:pointer;flex-shrink:0;color:var(--iosblue);display:flex;align-items:center;justify-content:center}
+.pbtn.locked{color:var(--dim);border:none;background:none;font-size:14px}
+.pmore{text-align:center;color:var(--iosblue);font-size:14px;font-weight:500;padding:14px 0 4px;cursor:pointer}
+/* apps toggles */
+.apptabs{display:flex;gap:2px;margin:14px 16px 0;padding:3px;border-radius:11px;background:rgba(118,118,128,.12);width:max-content}
+.apptab{border:none;padding:8px 16px;border-radius:9px;font-size:14px;font-weight:600;background:none;color:var(--text)}
+.apptab.on{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.acard{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:9px;box-shadow:var(--shadow)}
+.acard .pic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;color:#fff}
+.acard .amain{flex:1;min-width:0}
+.acard .aname{font-size:15px;font-weight:600}
+.acard .adesc{font-size:12.5px;color:var(--dim);margin-top:2px}
+.learn{color:var(--iosblue);font-size:13px;font-weight:500;margin-top:4px;display:inline-block}
+.tgl{width:50px;height:30px;border-radius:99px;background:rgba(118,118,128,.24);position:relative;transition:.2s;flex-shrink:0;cursor:pointer}
+.tgl.on{background:var(--ok)}
+.tgl::after{content:'';position:absolute;width:26px;height:26px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.tgl.on::after{left:22px}
+.seeapps{display:block;margin:16px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;color:var(--text);box-shadow:var(--shadow)}
+/* skills */
+.skempty{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 18px;text-align:center;margin:4px 16px 16px;box-shadow:var(--shadow)}
+.skempty .big{font-size:17px;font-weight:700}
+.skempty .sub{color:var(--dim);font-size:13.5px;margin:7px 0 16px}
+.skcreate{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;border-radius:99px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer}
+.skl{display:flex;align-items:center;gap:13px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.skl:last-child{border-bottom:none}
+.skl .sic{width:38px;height:38px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.skl .sname{font-size:15px;font-weight:600}
+.skl .sdesc{font-size:12.5px;color:var(--dim);margin-top:2px}
+/* search chats */
+.srec{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.srec .stt{flex:1;min-width:0}
+.srec .sp{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srec .sd{font-size:12.5px;color:var(--dim);margin-top:2px}
+/* settings */
 .slist{flex:1;overflow-y:auto;padding:12px 16px calc(24px + var(--sb))}
 .group{background:var(--panel);border-radius:13px;margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow)}
 .ghead{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600;padding:0 16px 7px}
@@ -124,8 +170,8 @@ body{background:var(--bg);color:var(--text);font:-apple-system,BlinkMacSystemFon
 .grow .gico{width:24px;text-align:center;font-size:17px}
 .grow .glab{flex:1}
 .grow .chev{color:#c4c4c8;font-size:14px}
-.prof{display:flex;align-items:center;gap:13px;background:var(--panel);border-radius:13px;padding:15px;margin-bottom:20px;box-shadow:var(--shadow)}
-.prof .av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700}
+.prof{display:flex;align-items:center;gap:13px;background:var(--panel);border-radius:13px;padding:15px;margin-bottom:20px;box-shadow:var(--shadow);cursor:pointer}
+.prof .av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#34c759,#00c9a7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700}
 .prof .pname{font-size:18px;font-weight:700}
 .prof .psub{color:var(--dim);font-size:13px;margin-top:1px}
 .f{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:16px;padding:12px 13px;margin-bottom:10px;outline:none;font-family:inherit}
@@ -133,13 +179,26 @@ body{background:var(--bg);color:var(--text);font:-apple-system,BlinkMacSystemFon
 .save{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;border-radius:14px;padding:13px;font-size:16px;font-weight:600;cursor:pointer;margin:4px 0 10px}
 .swatch{width:32px;height:32px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;flex-shrink:0}
 .swatch.sel{border-color:var(--text)}
-/* sheets */
+.st{font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 8px;border-radius:99px;flex-shrink:0}
+.READY{color:#1e9e4b;background:rgba(52,199,89,.13)}.DEGRADED{color:#c77700;background:rgba(255,149,0,.13)}.NOT_CONFIGURED,.OFFLINE,.ERROR{color:#d70015;background:rgba(255,59,48,.12)}
+/* account sheet */
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(3px);z-index:14;display:none}
 .sheet.on{display:block}
 .sheet .panel{position:absolute;left:0;right:0;bottom:0;background:var(--panel);border-radius:22px 22px 0 0;padding:12px 18px calc(26px + var(--sb));max-height:82dvh;overflow-y:auto;animation:up .22s ease;box-shadow:0 -8px 40px rgba(0,0,0,.12)}
 .grab{width:38px;height:5px;background:#d1d1d6;border-radius:3px;margin:4px auto 14px}
 h3{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin:16px 0 10px}
 .cap{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;margin-bottom:8px}
+.accav{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#34c759,#00c9a7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto}
+.acchead{text-align:center;padding:14px 0 18px}
+.acchead b{font-size:21px;font-weight:700;display:block;margin-top:10px}
+.manage{display:block;margin:0 auto;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:10px 22px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer}
+.swrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.swrow .mav{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5856d6,#af52de);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.swrow.add .mav{background:var(--panel2);color:var(--iosblue);border:1.5px dashed var(--iosblue)}
+.arow{display:flex;align-items:center;gap:11px;padding:12px 4px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer;width:100%;background:none;border-left:none;border-right:none;border-top:none;text-align:left;font-family:inherit;color:var(--text)}
+.arow .aico{width:24px;text-align:center;font-size:16px;color:var(--dim)}
+.arow .chev{color:#c4c4c8;font-size:13px;margin-left:auto}
+.accfoot{text-align:center;color:var(--dim);font-size:12px;padding:14px 0 4px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:rgba(28,28,30,.94);color:#fff;padding:9px 17px;border-radius:99px;font-size:13.5px;z-index:30;opacity:0;transition:.22s;box-shadow:var(--shadow)}
 .toast.show{opacity:1}
 pre{background:#f6f6f8;border:1px solid var(--line);border-radius:12px;padding:11px;overflow-x:auto;font-size:13px;margin:8px 0;color:#1c1c1e}
@@ -150,13 +209,21 @@ pre{background:#f6f6f8;border:1px solid var(--line);border-radius:12px;padding:1
 <div id="app">
   <!-- ============ DRAWER ============ -->
   <aside id="sidebar">
-    <div id="sb-head"><b>ARC</b><button class="icon-btn" id="sb-close">✕</button></div>
+    <div id="sb-head">
+      <button class="prof" id="sb-av" style="background:none;border:none;box-shadow:none;padding:0;display:flex;align-items:center;gap:11px;cursor:pointer">
+        <div class="av" style="width:40px;height:40px;font-size:17px">D</div>
+        <b style="font-size:18px">Danny X</b>
+      </button>
+      <button class="icon-btn" id="sb-close">✕</button>
+    </div>
     <button class="sb-btn" id="newchat">✚  New chat</button>
+    <button class="sb-btn" id="open-search">🔍  Search chats</button>
     <div class="sb-section">Recent</div>
     <div id="recents"></div>
     <div id="sb-foot">
+      <button class="nav-btn" data-nav="apps"><span class="ico">📱</span>Apps</button>
       <button class="nav-btn" data-nav="plugins"><span class="ico">🧩</span>Plugins</button>
-      <button class="nav-btn" data-nav="library"><span class="ico">📚</span>Library</button>
+      <button class="nav-btn" data-nav="skills"><span class="ico">✨</span>Skills</button>
       <button class="nav-btn" data-nav="settings"><span class="ico">⚙️</span>Settings</button>
     </div>
   </aside>
@@ -164,52 +231,89 @@ pre{background:#f6f6f8;border:1px solid var(--line);border-radius:12px;padding:1
 
   <!-- ============ MAIN (chat) ============ -->
   <div id="main">
-    <header style="border-bottom:1px solid var(--line);background:rgba(242,242,247,.86);backdrop-filter:blur(18px);padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:10px;display:flex;align-items:center;gap:10px;padding-left:14px;padding-right:14px">
+    <header>
       <button class="icon-btn" id="sb-open">☰</button>
-      <div class="logo">ARC</div><b style="font-size:20px;font-weight:700;letter-spacing:-.4px">ARC</b><span class="dot" id="dot"></span>
+      <div class="logo">ARC</div><b>ARC</b><span class="dot" id="dot"></span>
       <button id="modelpill"><span id="mp-name">Fast</span><span class="chev">▼</span></button>
     </header>
     <div id="modelmenu"></div>
     <div id="feed"></div>
-    <div id="greet"><div class="big">The mic is yours, Danny.</div>
-      <div class="sub">Ask anything — research, code, images, the terminal, your files.<br>ARC thinks out loud in the Thoughts panel.</div></div>
-    <div id="composer"><div id="row">
+    <div id="greet">
+      <div class="sparkwrap">
+        <svg viewBox="0 0 100 100" width="96" height="96"><defs>
+          <linearGradient id="rg" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#34c759"/><stop offset=".38" stop-color="#00c6ff"/>
+            <stop offset=".72" stop-color="#6c8cff"/><stop offset="1" stop-color="#af52de"/>
+          </linearGradient></defs>
+          <path d="M50 2 L59.5 40.5 L98 50 L59.5 59.5 L50 98 L40.5 59.5 L2 50 L40.5 40.5 Z" fill="url(#rg)"/>
+          <path d="M71 24 L73.5 33.5 L83 36 L73.5 38.5 L71 48 L68.5 38.5 L59 36 L68.5 33.5 Z" fill="url(#rg)" opacity=".85"/>
+        </svg>
+      </div>
+      <div class="big">The mic is yours, Danny.</div>
+      <div class="sub">Ask anything — research, code, images, the terminal, your files.<br>ARC thinks out loud in the Thoughts panel.</div>
+    </div>
+    <div id="chips"></div>
+    <div id="composer"><div id="pill">
+      <button id="plus">＋</button>
       <textarea id="input" rows="1" placeholder="Ask ARC anything"></textarea>
-      <button id="send">▲</button>
+      <button id="mic">🎙</button>
+      <button id="send" disabled>▲</button>
     </div></div>
   </div>
 
-  <!-- ============ PLUGINS SCREEN ============ -->
+  <!-- ============ PLUGINS ============ -->
   <div class="screen" id="scr-plugins">
     <header><button class="icon-btn" data-nav="chat" style="padding-left:0">‹</button></header>
     <div class="stitle">Plugins</div>
-    <div class="ssub" id="plug-sub">Built-in ARC capabilities</div>
+    <div class="ssub">Extend ARC with connected tools</div>
     <div class="psearch">🔍<input id="plug-search" placeholder="Search plugins"></div>
     <div class="plist" id="plug-list"></div>
   </div>
 
-  <!-- ============ LIBRARY SCREEN ============ -->
-  <div class="screen" id="scr-library">
+  <!-- ============ APPS ============ -->
+  <div class="screen" id="scr-apps">
     <header><button class="icon-btn" data-nav="chat" style="padding-left:0">‹</button></header>
-    <div class="stitle">Library</div>
-    <div style="display:inline-flex;gap:2px;margin:14px 16px 0;padding:3px;border-radius:11px;background:rgba(118,118,128,.12)">
-      <button class="libtab" data-lib="docs" style="border:none;padding:8px 16px;border-radius:9px;font-size:14px;font-weight:600;background:#fff;color:#000;box-shadow:0 1px 4px rgba(0,0,0,.08)">Documents</button>
-      <button class="libtab" data-lib="media" style="border:none;padding:8px 16px;border-radius:9px;font-size:14px;font-weight:600;background:none;color:var(--text)">Media</button>
+    <div class="stitle">Apps</div>
+    <div class="apptabs">
+      <button class="apptab on" data-at="google">From Google</button>
+      <button class="apptab" data-at="other">Other</button>
     </div>
-    <div class="plist" id="lib-list" style="padding-top:16px"></div>
+    <div class="plist" id="app-list" style="padding-top:16px"></div>
   </div>
 
-  <!-- ============ SETTINGS SCREEN ============ -->
+  <!-- ============ SKILLS ============ -->
+  <div class="screen" id="scr-skills">
+    <header><button class="icon-btn" data-nav="chat" style="padding-left:0">‹</button></header>
+    <div class="stitle">Skills</div>
+    <div class="skempty">
+      <div class="big">No skills yet</div>
+      <div class="sub">Skills are repeatable workflows ARC runs for you with real tools.</div>
+      <button class="skcreate" id="sk-create">✨ Create with ARC</button>
+    </div>
+    <div class="grp" style="padding-top:0">Built-in</div>
+    <div class="plist" id="sk-list" style="padding-top:0"></div>
+  </div>
+
+  <!-- ============ SEARCH CHATS ============ -->
+  <div class="screen" id="scr-search">
+    <header><button class="icon-btn" data-nav="chat" style="padding-left:0">‹</button></header>
+    <div class="stitle">Search chats</div>
+    <div class="psearch" style="margin-top:14px">🔍<input id="search-in" placeholder="Search your chats"></div>
+    <div class="plist" id="search-list"></div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
   <div class="screen" id="scr-settings">
     <header><button class="icon-btn" data-nav="chat" style="padding-left:0">‹</button></header>
     <div class="stitle">Settings</div>
     <div class="slist">
-      <div class="prof"><div class="av">D</div><div><div class="pname">Danny X</div><div class="psub">ARC Assistant · Free</div></div></div>
+      <div class="prof" id="set-acc"><div class="av">D</div><div><div class="pname">Danny X</div><div class="psub">ARC Assistant · Open access</div></div></div>
 
       <div class="ghead">Customize ARC</div>
       <div class="group">
         <button class="grow" id="g-mem"><span class="gico">🧠</span><span class="glab">Memory</span><span class="chev">›</span></button>
         <button class="grow" data-nav="plugins"><span class="gico">🧩</span><span class="glab">Plugins</span><span class="chev">›</span></button>
+        <button class="grow" data-nav="skills"><span class="gico">✨</span><span class="glab">Skills</span><span class="chev">›</span></button>
       </div>
 
       <div class="ghead">Appearance</div>
@@ -227,7 +331,7 @@ pre{background:#f6f6f8;border:1px solid var(--line);border-radius:12px;padding:1
       <div class="ghead">Model</div>
       <div class="group" style="padding:14px 15px">
         <input class="f" id="s-base" placeholder="Ollama URL (http://127.0.0.1:11434 or https://ollama.com)">
-        <input class="f" id="s-key" type="password" placeholder="API key (write-only)">
+        <input class="f" id="s-key" type="password" placeholder="API key (write-only, optional)">
         <input class="f" id="s-p" placeholder="Primary model">
         <input class="f" id="s-r" placeholder="Reasoning model">
         <input class="f" id="s-c" placeholder="Critic model">
@@ -236,16 +340,41 @@ pre{background:#f6f6f8;border:1px solid var(--line);border-radius:12px;padding:1
 
       <div class="ghead">ARC access</div>
       <div class="group" style="padding:14px 15px">
-        <input class="f" id="s-api" placeholder="ARC API key">
+        <input class="f" id="s-api" placeholder="ARC API key (optional — ARC is open by default)">
         <input class="f" id="s-steps" type="number" placeholder="Max task steps (default 50)">
       </div>
 
       <div class="ghead">Capability matrix</div>
       <div class="group" style="padding:13px 15px" id="caps">Checking…</div>
-      <div style="text-align:center;color:var(--dim);font-size:12px;margin:4px 0 20px">ARC · build 1.1</div>
+      <div style="text-align:center;color:var(--dim);font-size:12px;margin:4px 0 20px">ARC · Autonomous Reasoning & Compute · v2</div>
     </div>
   </div>
 </div>
+
+<!-- ============ ACCOUNT SHEET ============ -->
+<div class="sheet" id="account"><div class="panel">
+  <div class="grab"></div>
+  <div class="acchead">
+    <div class="accav">D</div>
+    <b>Hi, Danny!</b>
+  </div>
+  <button class="manage" id="acc-manage">Manage your account</button>
+  <h3 style="margin-top:20px">Switch account</h3>
+  <div class="swrow"><div class="mav">D</div><span style="flex:1">Danny X <small style="color:var(--dim)"> · this device</small></span><span style="color:var(--ok);font-size:12px;font-weight:700">✓</span></div>
+  <div class="swrow add"><div class="mav">＋</div><span style="color:var(--iosblue)">Add another account</span></div>
+  <h3 style="margin-top:18px">Account</h3>
+  <button class="arow"><span class="aico">📜</span>ARC Apps activity<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">💬</span>Instructions for ARC<span class="chev">›</span></button>
+  <button class="arow" data-nav="plugins"><span class="aico">🔗</span>Connected apps<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">🤖</span>Agent manager<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">📓</span>ARC Notebook<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">🔄</span>Updates<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">🛡</span>Privacy Help<span class="chev">›</span></button>
+  <button class="arow" data-nav="settings"><span class="aico">⚙️</span>Settings<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">🚩</span>Report a problem<span class="chev">›</span></button>
+  <button class="arow"><span class="aico">❓</span>Help<span class="chev">›</span></button>
+  <div class="accfoot">Privacy Policy · Terms of Service</div>
+</div></div>
 
 <div class="sheet" id="browser"><div class="panel">
   <div class="grab"></div><h3>ARC Browser</h3>
@@ -258,36 +387,90 @@ pre{background:#f6f6f8;border:1px solid var(--line);border-radius:12px;padding:1
 </div></div>
 <div class="sheet" id="memsheet"><div class="panel">
   <div class="grab"></div><h3>Memory</h3>
-  <div id="mem-out" style="font-size:14px;line-height:1.6;color:#3a3a3c">Loading…</div>
+  <div id="mem-out" style="font-size:14px;line-height:1.6;color:#3a3a3c"></div>
 </div></div>
 <div class="toast" id="toast"></div>
 
 <script>
-const $=s=>document.querySelector(s),feed=$('#feed'),input=$('#input'),send=$('#send');
+const $=s=>document.querySelector(s),feed=$('#feed'),input=$('#input'),send=$('#send'),mic=$('#mic'),plus=$('#plus');
 const DEFAULT_KEY='arc-6c09153459e12754bf9a9266bd1553a2';
 const hdrs=()=>{const k=localStorage.arc_key||DEFAULT_KEY;return {'Authorization':'Bearer '+k}};
 async function AF(u,o={}){const r=await fetch(u,{...o,headers:{...(o.headers||{}),...hdrs()}});
-  if(r.status===401){toast('API key required');nav('settings')}
+  if(r.status===401){toast('API key required — add it in Settings');nav('settings')}
   return r}
 const API=location.origin;let session='s'+Date.now(),busy=false;
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const md=s=>{let t=esc(s);t=t.replace(/```(\w*)\n([\s\S]*?)```/g,(m,l,c)=>'<pre>'+c+'</pre>');t=t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');t=t.replace(/\[(\d+)\]/g,'<span style="color:#6c8cff">[$1]</span>');return t};
-input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,110)+'px'});
+/* ---------- composer ---------- */
+input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,110)+'px';send.disabled=!input.value.trim()});
+input.addEventListener('focus',()=>{$('#chips').classList.add('on')});
+input.addEventListener('blur',()=>setTimeout(()=>$('#chips').classList.remove('on'),250));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!busy){e.preventDefault();go()}});
 send.addEventListener('click',()=>!busy&&go());
+/* suggestion chips */
+const CHIPS=['I','The',"I'm",'Help me','Research','Run','Create','Generate an image','Check uptime','Explain'];
+$('#chips').innerHTML=CHIPS.map(c=>`<div class="chip" data-c="${esc(c)}">${esc(c)}</div>`).join('');
+$('#chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+  if(['I','The',"I'm",'Help me','Run','Create','Research'].includes(c.dataset.c)){
+    input.value=(input.value+' '+c.dataset.c).trim()+' ';input.focus();
+  }else{
+    const map={'Generate an image':'Generate an image of a sunrise over the ocean','Check uptime':'Check the uptime of all ARC services','Explain':'Explain how the ARC model council works'};
+    input.value=map[c.dataset.c]||c.dataset.c;input.focus();send.disabled=false;
+  }
+  input.style.height='auto';input.style.height=Math.min(input.scrollHeight,110)+'px';send.disabled=!input.value.trim();
+});
+/* + quick actions */
+plus.onclick=()=>{const acts=['🌐 Browser','🔬 Research','⌨️ Terminal','🎨 Image','📈 Trading'];
+  $('#modelmenu').innerHTML='';nav('chat');
+  const m=$('#modelmenu');m.innerHTML=acts.map(a=>`<div class="mi" data-a="${esc(a)}"><b>${esc(a)}</b></div>`).join('')+'<div class="mtip">Pick a tool or just type.</div>';
+  m.classList.add('on');
+  m.querySelectorAll('[data-a]').forEach(el=>el.onclick=()=>{m.classList.remove('on');
+    const tool=el.dataset.a;
+    if(tool.includes('Browser'))openBrowser();
+    else if(tool.includes('Research')){input.value='Research: ';input.focus()}
+    else if(tool.includes('Terminal')){input.value='$ ';input.focus()}
+    else if(tool.includes('Image')){input.value='Generate an image of ';input.focus()}
+    else if(tool.includes('Trading')){input.value='Show my Solana wallets';input.focus()}
+    send.disabled=false;});
+};
+/* mic — real Web Speech API */
+mic.onclick=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Voice input is not supported in this browser');return}
+  if(mic.classList.contains('rec'))return;
+  const r=new SR();r.interimResults=false;r.lang='en-US';
+  mic.classList.add('rec');
+  r.onresult=e=>{input.value=(input.value+' '+e.results[0][0].transcript).trim();send.disabled=!input.value.trim();input.focus()};
+  r.onend=()=>mic.classList.remove('rec');
+  r.onerror=()=>{mic.classList.remove('rec');toast('Voice input failed')};
+  r.start();
+};
 /* ---------- nav ---------- */
 function nav(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
-  if(name==='chat'){closeSb();return}
-  const scr=$('#scr-'+name);if(scr){scr.classList.add('on');if(name==='plugins')loadPlugins();if(name==='settings'){loadSettings();loadCaps()}}
+  if(name==='chat'){closeSb();sheet('#account',false);return}
+  const scr=$('#scr-'+name);if(scr){scr.classList.add('on');closeSb();sheet('#account',false);
+    if(name==='plugins')loadPlugins();if(name==='settings'){loadSettings();loadCaps()}
+    if(name==='search')loadSearch('');if(name==='apps')loadApps();if(name==='skills')loadSkills()}
 }
-document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>nav(b.dataset.nav));
+document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=e=>{e.stopPropagation();nav(b.dataset.nav)});
 /* ---------- drawer ---------- */
 $('#sb-open').onclick=()=>{$('#sidebar').classList.add('open');$('#scrim').classList.add('on');loadRecents()};
 const closeSb=()=>{$('#sidebar').classList.remove('open');$('#scrim').classList.remove('on')};
 $('#sb-close').onclick=closeSb;$('#scrim').onclick=closeSb;
 $('#newchat').onclick=()=>{session='s'+Date.now();feed.innerHTML='';closeSb();checkGreet();toast('New chat')};
+$('#open-search').onclick=()=>nav('search');
+$('#sb-av').onclick=()=>{closeSb();sheet('#account',true)};
+$('#set-acc').onclick=()=>{sheet('#account',true)};
+/* account sheet */
+const sheet=(id,open)=>{$(id).classList.toggle('on',open)};
+$('#acc-manage').onclick=()=>toast('Account management coming soon');
+document.querySelectorAll('#account .arow').forEach(a=>{if(!a.dataset.nav)a.onclick=()=>toast('Coming soon — wired soon')});
+$('#account').addEventListener('click',e=>{if(e.target.id==='account')sheet('#account',false)});
+/* ---------- sessions / greeting ---------- */
+function checkGreet(){$('#greet').classList.toggle('on',!feed.children.length)}
+checkGreet();
 async function loadRecents(){
   const r=await(await AF(API+'/sessions')).json();
   $('#recents').innerHTML=(r.sessions||[]).map(s=>`<div class="rec" data-s="${esc(s.session)}">${esc(s.preview||s.session)}<small>${s.messages} msg</small></div>`).join('')||'<div class="rec" style="color:#8e8e93">No chats yet</div>';
@@ -298,20 +481,34 @@ async function openSession(){
   for(const m of r.messages||[]){bubble(m.role,m.content)}
   checkGreet();
 }
-/* ---------- greeting ---------- */
-function checkGreet(){$('#greet').style.display=feed.children.length?'none':'block'}
-checkGreet();
+const fdate=ts=>{if(!ts)return '';const d=new Date(ts*1000),n=new Date();
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const s=mo[d.getMonth()]+' '+d.getDate();return d.getFullYear()===n.getFullYear()?s:s+', '+d.getFullYear()};
+/* ---------- search chats ---------- */
+let allSessions=[];
+async function loadSearch(q){
+  if(!allSessions.length){const r=await(await AF(API+'/sessions')).json();allSessions=r.sessions||[]}
+  const qq=q.toLowerCase();
+  const list=allSessions.filter(s=>!qq||(s.preview||s.session).toLowerCase().includes(qq));
+  $('#search-list').innerHTML=list.map(s=>`<div class="srec" data-s="${esc(s.session)}">
+    <div class="stt"><div class="sp">${esc(s.preview||s.session)}</div><div class="sd">${s.messages} messages · ${fdate(s.ts)}</div></div></div>`).join('')
+    ||'<div style="color:#8e8e93;text-align:center;padding-top:40px">No chats found</div>';
+  $('#search-list').querySelectorAll('.srec').forEach(el=>el.onclick=async()=>{session=el.dataset.s;await openSession();nav('chat')});
+}
+$('#search-in').addEventListener('input',e=>loadSearch(e.target.value));
 /* ---------- model pill ---------- */
-$('#modelpill').onclick=async e=>{e.stopPropagation();const m=$('#modelmenu');if(m.classList.contains('on')){m.classList.remove('on');return}
-  let installed=[],state='…';
-  try{const s=await(await AF(API+'/status')).json();state=s.ollama;const mo=await(await AF(API+'/models')).json();installed=mo.models||[]}catch(err){}
+$('#modelpill').onclick=async e=>{e.stopPropagation();const m=$('#modelmenu');
+  if(m.classList.contains('on')){m.classList.remove('on');return}
+  let installed=[],state='…',council=null;
+  try{const s=await(await AF(API+'/status')).json();state=s.ollama;
+    const mo=await(await AF(API+'/models')).json();council=mo.active||null;
+    const dc=mo.declared||{};installed=Object.values(dc).filter(Boolean);
+  }catch(err){}
   m.innerHTML=`<div class="mi"><b>${state==='READY'?'Fast':'Waking'}</b><span class="st ${state==='READY'?'READY':'OFFLINE'}">${state}</span></div>`
-   +(installed.slice(0,4).map(x=>`<div class="mi"><b>${esc(x)}</b><small>installed</small></div>`).join('')||'<div class="mtip">No models installed on the fallback host.</div>')
+   +(council?`<div class="mi"><small>Primary: ${esc(council.primary||'none')} · Council: ${council.reasoning||'-'} / ${council.critic||'-'}</small></div>`:'')
    +`<div class="mtip">Full uncensored council runs when the Colab T4 worker is online (notebook in the ARC-AP GitHub repo).</div>`;
   m.classList.add('on')};
-document.addEventListener('click',e=>{if(!$('#modelmenu').contains(e.target)&&e.target.id!=='modelpill')$('#modelmenu').classList.remove('on')});
-/* ---------- sheets ---------- */
-const sheet=(id,open)=>{$(id).classList.toggle('on',open)};
+document.addEventListener('click',e=>{if(!$('#modelmenu').contains(e.target)&&e.target.id!=='modelpill'&&e.target.id!=='plus')$('#modelmenu').classList.remove('on')});
 /* ---------- settings ---------- */
 async function loadSettings(){
   const r=await(await AF(API+'/settings')).json();const s=r.settings||{};
@@ -330,7 +527,6 @@ $('#save-settings').onclick=async()=>{
   await AF(API+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   toast('Saved');boot();
 };
-/* accent swatches */
 if(localStorage.arc_accent){const [a,b]=JSON.parse(localStorage.arc_accent);document.documentElement.style.setProperty('--accent',a);document.documentElement.style.setProperty('--accent2',b)}
 $('#swatches').querySelectorAll('.swatch').forEach(s=>s.onclick=()=>{
   $('#swatches').querySelectorAll('.swatch').forEach(x=>x.classList.remove('sel'));s.classList.add('sel');
@@ -352,64 +548,126 @@ const PLUGIN_META={
   colab:{n:'Colab GPU',d:'T4 GPU worker for the full model council',i:'⚡',c:'#ff9500'},
   memory:{n:'Memory',d:'Workflow memory across chats',i:'💡',c:'#5856d6'},
 };
+const FEATURED=[
+  {n:'Gmail',d:'Draft, search and summarize email',i:'✉️',c:'#ea4335',live:false},
+  {n:'GitHub',d:'Repos, issues, deploys',i:'🐙',c:'#1c1c1e',live:true},
+  {n:'Google Drive',d:'Browse and search your files',i:'🗂',c:'#4285f4',live:false},
+  {n:'Google Calendar',d:'Read and create events',i:'📅',c:'#34a853',live:false},
+  {n:'Notion',d:'Pages and databases',i:'📓',c:'#8e8e93',live:false},
+  {n:'Slack',d:'Send and read messages',i:'💬',c:'#4a154b',live:false},
+];
+const DEVTOOLS=[
+  {n:'Terminal',d:'Full Linux shell in the sandbox',i:'⌨️',c:'#5856d6'},
+  {n:'Colab GPU',d:'Free T4 worker for the dolphin council',i:'⚡',c:'#ff9500'},
+  {n:'Security lab',d:'Recon and audit tools',i:'🛡️',c:'#ff3b30'},
+];
+const BIZOPS=[
+  {n:'Research',d:'Cited web research',i:'🔬',c:'#007aff'},
+  {n:'Trading',d:'Solana wallets and prices',i:'📈',c:'#00c9a7'},
+  {n:'Projects',d:'Workspace project tracking',i:'📦',c:'#ff6482'},
+];
 async function loadCaps(){try{const c=await(await AF(API+'/capabilities')).json();
   $('#caps').innerHTML=Object.entries(c).map(([k,v])=>`<div class="cap" style="border:none;padding:9px 0"><span>${k.toUpperCase()}</span><span class="st ${v.state}">${v.state}</span></div>`).join('');
   }catch(e){$('#caps').innerHTML='<div class="cap" style="border:none"><span>Control plane unreachable</span><span class="st ERROR">ERROR</span></div>'}}
 async function loadPlugins(){
   let caps={};try{caps=await(await AF(API+'/capabilities')).json()}catch(e){}
   const entries=Object.keys(caps).length?Object.entries(caps):Object.keys(PLUGIN_META).map(k=>[k,{state:'READY'}]);
-  const cards=entries.map(([k,v])=>{const m=PLUGIN_META[k]||{n:k,d:'',i:'▪️',c:'#8e8e93'};const st=v.state||'READY';
-    return `<div class="pcard" data-q="${esc((m.n+' '+m.d).toLowerCase())}"><div class="pic" style="background:${m.c}">${m.i}</div>
-      <div class="pmain"><div class="pname">${esc(m.n)}</div><div class="pdesc">${esc(m.d)}</div></div>
-      <span class="st ${st}">${st}</span></div>`}).join('');
-  const rows=cards.split('<div class="pcard"').slice(1).map(x=>'<div class="pcard"'+x);
-  const inst=rows.filter(x=>x.includes('class="st READY"')).join('');
-  const other=rows.filter(x=>!x.includes('class="st READY"')).join('');
-  $('#plug-list').innerHTML=(inst?`<div class="grp">Installed</div>${inst}`:'')
-    +(other?`<div class="grp">Available</div>${other}`:'')
-    +`<div class="grp">Featured</div>
-      <div class="pcard" data-q="colab gpu worker"><div class="pic" style="background:#00c9a7">⚡</div>
-      <div class="pmain"><div class="pname">Colab GPU worker</div><div class="pdesc">Run the full uncensored council (dolphin-llama3, qwen2.5, dolphin-mistral) on a free T4 — one-click notebook in the ARC-AP GitHub repo.</div></div><span class="st READY">FREE</span></div>`;
+  /* installed icon row */
+  const inst=entries.filter(([k,v])=>(v.state||'READY')==='READY').map(([k])=>{const m=PLUGIN_META[k]||{n:k,i:'▪️',c:'#8e8e93'};return `<div class="icard"><div class="ic" style="background:${m.c}">${m.i}</div><span>${esc(m.n)}</span></div>`}).join('');
+  const avail=entries.filter(([k,v])=>(v.state||'READY')!=='READY').map(([k,v])=>{const m=PLUGIN_META[k]||{n:k,i:'▪️',c:'#8e8e93'};return `<div class="icard"><div class="ic off" style="background:${m.c}">${m.i}</div><span>${esc(m.n)}</span></div>`}).join('');
+  const featCards=FEATURED.map(p=>`<div class="pcard" data-q="${esc(p.n+' '+p.d).toLowerCase()}">
+    <div class="pic" style="background:${p.c}">${p.i}</div>
+    <div class="pmain"><div class="pname">${esc(p.n)}</div><div class="pdesc">${p.live?p.d:esc(p.d)+' · coming soon'}</div></div>
+    ${p.live?'<button class="pbtn" data-live="1">＋</button>':'<button class="pbtn locked" data-lock="1">🔒</button>'}</div>`).join('');
+  const section=(t,arr)=>`<div class="grp">${t}</div>`+arr.map(p=>`<div class="pcard" data-q="${esc(p.n+' '+p.d).toLowerCase()}">
+    <div class="pic" style="background:${p.c}">${p.i}</div>
+    <div class="pmain"><div class="pname">${esc(p.n)}</div><div class="pdesc">${esc(p.d)}</div></div>
+    <button class="pbtn">＋</button></div>`).join('');
+  $('#plug-list').innerHTML=
+    `<div class="grp">Installed</div><div class="irow">${inst}${avail}</div>`
+    +`<div class="grp">Featured</div>${featCards}`
+    +section('Developer Tools',DEVTOOLS)
+    +section('Business & Operations',BIZOPS)
+    +`<div class="pmore" id="plug-more">See Outlook Email, Canva, and more</div>`;
   $('#plug-search').oninput=()=>{const q=$('#plug-search').value.toLowerCase();
     document.querySelectorAll('#plug-list .pcard').forEach(c=>{c.style.display=c.dataset.q.includes(q)?'flex':'none'})};
+  $('#plug-more').onclick=()=>toast('More integrations landing soon');
+  document.querySelectorAll('#plug-list .pbtn').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    if(b.dataset.lock){toast('Not connected yet — coming soon')}
+    else{b.textContent='✓';b.style.color='var(--ok)';b.style.borderColor='var(--ok)';toast('Ready to use in chat')}});
 }
-/* ---------- library ---------- */
-let libTab='docs';
-document.querySelectorAll('.libtab').forEach(b=>b.onclick=()=>{
-  libTab=b.dataset.lib;
-  document.querySelectorAll('.libtab').forEach(x=>{x.style.background='none';x.style.boxShadow='none'});
-  b.style.background='#fff';b.style.boxShadow='0 1px 4px rgba(0,0,0,.08)';
-  loadLibrary();
-});
-async function loadLibrary(){
-  const out=$('#lib-list');
-  if(libTab==='media'){
-    try{const r=await(await AF(API+'/media/library')).json();const items=r.items||r.files||r.library||[];
-      out.innerHTML=items.map(f=>`<div class="pcard"><div class="pic" style="background:#ff9500">🎬</div><div class="pmain"><div class="pname">${esc((f.name||f.filename||String(f)).slice(0,50))}</div><div class="pdesc">${esc(f.kind||'media file')}</div></div></div>`).join('')||'<div style="color:#8e8e93;text-align:center;padding-top:40px">No media yet</div>';
-    }catch(e){out.innerHTML='<div style="color:#8e8e93;text-align:center;padding-top:40px">Media library unavailable</div>'}
-  }else{
-    try{const r=await(await AF(API+'/projects')).json();const items=r.projects||r.items||[];
-      out.innerHTML=items.map(p=>`<div class="pcard"><div class="pic" style="background:#5856d6">📄</div><div class="pmain"><div class="pname">${esc(p.name||p)}</div><div class="pdesc">${esc((p.description||'project').slice(0,60))}</div></div></div>`).join('')||'<div style="color:#8e8e93;text-align:center;padding-top:40px">No documents yet</div>';
-    }catch(e){out.innerHTML='<div style="color:#8e8e93;text-align:center;padding-top:40px">No documents yet</div>'}
-  }
+/* ---------- apps ---------- */
+const GOOGLE_APPS=[
+  {n:'Gmail',d:'Email',i:'✉️',c:'#ea4335',live:false},
+  {n:'Calendar',d:'Events and scheduling',i:'📅',c:'#34a853',live:false},
+  {n:'Docs',d:'Word documents via Files',i:'📄',c:'#4285f4',live:true},
+  {n:'Drive',d:'File storage and search',i:'🗂',c:'#fbbc04',live:false},
+  {n:'Keep',d:'Quick notes via Memory',i:'💡',c:'#fbbc04',live:true},
+  {n:'Tasks',d:'Background tasks',i:'✅',c:'#4285f4',live:true},
+];
+const OTHER_APPS=[
+  {n:'Terminal',d:'Real Linux shell',i:'⌨️',c:'#5856d6',live:true},
+  {n:'Research',d:'Cited web research',i:'🔬',c:'#007aff',live:true},
+  {n:'Browser',d:'Screenshots and reading',i:'🌐',c:'#34c759',live:true},
+  {n:'Media',d:'Image and video generation',i:'🎨',c:'#ff9500',live:true},
+  {n:'Trading',d:'Solana tools',i:'📈',c:'#00c9a7',live:true},
+  {n:'Security lab',d:'Recon tools',i:'🛡️',c:'#ff3b30',live:true},
+];
+let appTab='google';
+document.querySelectorAll('.apptab').forEach(b=>b.onclick=()=>{
+  appTab=b.dataset.at;
+  document.querySelectorAll('.apptab').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  loadApps()});
+function loadApps(){
+  const list=appTab==='google'?GOOGLE_APPS:OTHER_APPS;
+  const on=JSON.parse(localStorage.arc_apps||'{}');
+  $('#app-list').innerHTML=list.map(a=>{
+    const key='app_'+a.n;
+    return `<div class="acard" data-q="${esc(a.n+' '+a.d).toLowerCase()}">
+      <div class="pic" style="background:${a.c};${a.live?'':'filter:grayscale(.85);opacity:.6'}">${a.i}</div>
+      <div class="amain"><div class="aname">${esc(a.n)}</div><div class="adesc">${esc(a.d)}</div>
+        <span class="learn" data-l="${esc(a.n)}">Learn more</span></div>
+      <div class="tgl ${on[key]?'on':''}" data-t="${key}" data-live="${a.live}"></div></div>`}).join('')
+    +`<button class="seeapps" id="see-apps">▶ See apps in action</button>`;
+  document.querySelectorAll('#app-list .learn').forEach(l=>l.onclick=e=>{e.stopPropagation();toast(l.dataset.l+' — open chat and ask ARC to use it')});
+  document.querySelectorAll('#app-list .tgl').forEach(t=>t.onclick=e=>{e.stopPropagation();
+    if(t.dataset.live!=='true'){toast('Coming soon');return}
+    t.classList.toggle('on');
+    const o=JSON.parse(localStorage.arc_apps||'{}');o[t.dataset.t]=t.classList.contains('on');localStorage.arc_apps=JSON.stringify(o);
+    toast((t.classList.contains('on')?'Enabled: ':'Disabled: ')+t.dataset.t.replace('app_',''))});
+  $('#see-apps').onclick=()=>{nav('chat');input.value='Show me what you can do — check your capabilities and run a quick demo';send.disabled=false;input.focus()};
 }
-/* ---------- memory sheet ---------- */
+/* ---------- skills ---------- */
+const SKILLS=[
+  {n:'Word Documents',d:'Draft and save .docx files with real content',i:'📄',p:'Create a Word document about '},
+  {n:'PDFs',d:'Build PDF reports from research or data',i:'📕',p:'Create a PDF about '},
+  {n:'Presentations',d:'Slide decks from a topic or outline',i:'📊',p:'Create a presentation about '},
+  {n:'Skill Creator',d:'Describe a workflow — ARC turns it into a repeatable skill',i:'🛠',p:'Create a skill that '},
+  {n:'Spreadsheets',d:'CSV / spreadsheet generation and cleanup',i:'📈',p:'Create a spreadsheet of '},
+];
+function loadSkills(){
+  $('#sk-list').innerHTML=SKILLS.map(s=>`<div class="skl" data-p="${esc(s.p)}">
+    <div class="sic">${s.i}</div><div><div class="sname">${esc(s.n)}</div><div class="sdesc">${esc(s.d)}</div></div></div>`).join('');
+  document.querySelectorAll('#sk-list .skl').forEach(el=>el.onclick=()=>{
+    nav('chat');input.value=el.dataset.p;send.disabled=false;input.focus();toast('Describe it and hit send — ARC builds it with real tools')});
+  $('#sk-create').onclick=()=>{nav('chat');input.value='Create a skill that ';input.focus();send.disabled=false};
+}
+/* ---------- memory / browser sheets ---------- */
 $('#g-mem').onclick=()=>{sheet('#memsheet',true);
   $('#mem-out').textContent='Workflow memory is kept automatically. Ask ARC to remember things in chat — durable facts are stored and reused in later sessions.'};
 $('#memsheet').addEventListener('click',e=>{if(e.target.id==='memsheet')sheet('#memsheet',false)});
-/* ---------- browser ---------- */
+function openBrowser(){sheet('#browser',true)}
 $('#b-shot').onclick=async()=>{
   const url=$('#b-url').value.trim();if(!url)return;
   $('#b-out').innerHTML='<div style="color:#8e8e93">Loading…</div>';
   const r=await(await AF(API+'/browse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,action:'screenshot'})})).json();
-  $('#b-out').innerHTML=r.screenshot?`<img src="${API+r.screenshot}" style="width:100%;border-radius:12px;border:1px solid rgba(60,60,67,.13)">`:`<div style="color:#ff3b30">${esc(r.error||'failed')}</div>`;
-};
+  $('#b-out').innerHTML=r.screenshot?`<img src="${API+r.screenshot}" style="width:100%;border-radius:12px;border:1px solid rgba(60,60,67,.13)">`:`<div style="color:#ff3b30">${esc(r.error||'failed')}</div>`};
 $('#b-read').onclick=async()=>{
   const url=$('#b-url').value.trim();if(!url)return;
   $('#b-out').innerHTML='<div style="color:#8e8e93">Reading…</div>';
   const r=await(await AF(API+'/browse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,action:'extract'})})).json();
-  $('#b-out').innerHTML=`<div style="font-size:13px;line-height:1.5;max-height:260px;overflow-y:auto">${esc((r.text||r.error||'').slice(0,4000))}</div>`;
-};
+  $('#b-out').innerHTML=`<div style="font-size:13px;line-height:1.5;max-height:260px;overflow-y:auto">${esc((r.text||r.error||'').slice(0,4000))}</div>`};
+$('#browser').addEventListener('click',e=>{if(e.target.id==='browser')sheet('#browser',false)});
 /* ---------- chat ---------- */
 function bubble(role,text){
   const d=document.createElement('div');d.className='msg '+(role==='user'||role==='me'?'user':'arc');
@@ -470,7 +728,6 @@ async function go(){
   const text=input.value.trim();if(!text)return;
   input.value='';input.style.height='auto';busy=true;send.disabled=true;
   bubble('user',text);thBox=null;
-  /* background task intent */
   if(/\b(task|background)\b/i.test(text)&&/^(arc[,:\s]*)?(do|start|run|make|create|build|research)\b/i.test(text.replace(/\btask\b/i,'task'))&&/in background|as a task|background task/i.test(text)){
     const r=await(await AF(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:text.replace(/.*background task:? ?/i,'')})})).json();
     taskCard(r);busy=false;send.disabled=false;return;

@@ -24,6 +24,11 @@ from . import media as _media
 MAX_CONTEXT_EVENTS = 12  # how many memory entries feed the model
 
 
+ARC_SYSTEM_PROMPT = """You are ARC - Autonomous Reasoning & Compute: a mobile-first AI operating system.
+Personality: confident, direct, useful, premium. Address the user as Danny. No "as an AI" talk, no meta commentary.
+Honesty: real results only. Never fabricate tool output, balances, or success. If something is not available, say so plainly.
+Style: crisp, short paragraphs, get to the point. Stream straight to the answer."""
+
 def act(kind: str, detail: str) -> dict:
     return {"type": kind, "label": KIND_LABELS[kind], "detail": detail, "ts": time.time()}
 
@@ -31,7 +36,7 @@ def act(kind: str, detail: str) -> dict:
 KIND_LABELS = {
     "pondering": "Pondering", "scouting": "Scouting", "computing": "Computing",
     "forging": "Forging", "studying": "Studying", "weaving": "Weaving",
-    "waking": "Waking",
+    "waking": "Waking", "done": "Done",
 }
 
 
@@ -77,6 +82,26 @@ def _extract_image_prompt(msg: str) -> str:
     return cleaned or msg
 
 
+_SHELL_PAT = re.compile(
+    r"(^|\s)(sudo\b|apt(-get)?\b|pip3?\b|npm\b|npx\b|brew\b|chmod\b|chown\b|mkdir\b|touch\b|"
+    r"tar\b|unzip\b|wget\b|systemctl\b|crontab\b|uname\b|whoami\b|pwd\b|df\s+-|free\s+-|ps\s+aux|"
+    r"git\s+(clone|init|add|commit|push|pull|status|log)\b|docker\b|ffmpeg\b|nmap\b|gcc\b|make\b|"
+    r"python3?\s+(-[a-z]+\s+)*[\w./-]+\.(py|sh)\b|node\s+[\w./-]+\.js\b|cd\s+/|cat\s+/|ls\s+-|echo\s+\$)",
+    re.I)
+_QUESTION_PAT = re.compile(r"^(who|what|why|how|when|where|which|can you|could you|tell me about|explain)\b.*\?", re.I)
+
+
+def _looks_like_shell(msg: str) -> bool:
+    """Install / shell / command language routes straight to the real terminal.
+    Plain questions ('what is pip?') must NOT."""
+    m = msg.strip().lstrip("$").strip()
+    if not m:
+        return False
+    if _QUESTION_PAT.match(m):
+        return False
+    return bool(_SHELL_PAT.search(m))
+
+
 async def _classify(msg: str) -> str:
     """Understand: classify the task honestly with the primary model (fast path: heuristics)."""
     if "colab status" in msg.lower():
@@ -90,6 +115,8 @@ async def _classify(msg: str) -> str:
     if _looks_like_terminal(msg):
         return "terminal"
     if msg.strip().startswith("$") or msg.strip().startswith("#!"):
+        return "terminal"
+    if _looks_like_shell(msg):
         return "terminal"
     return "chat"
 
@@ -120,13 +147,13 @@ async def _council_answer(msg: str, history: list, emit) -> str:
         emit(act("pondering", f"Council mix: {m_spec} (reasoning/coding) + {m_critic} (creative) + {m_reason} (fast perspective)"))
         plan = await safe(m_reason,
             f"Task: {msg}\nBreak this into 2-4 concrete steps. Be terse, one line per step.",
-            system="You are ARC's planner. Output a numbered plan only.", n=200)
+            system=ARC_SYSTEM_PROMPT + "\nYou are ARC's planner. Output a numbered plan only.", n=200)
 
         emit(act("forging", "Three models drafting in parallel — cross-checking begins"))
         draft_acc, draft_creative = await asyncio.gather(
             safe(m_spec,
                 f"Plan:\n{plan}\n\nTask: {msg}\nWrite the best direct answer. Prioritize accuracy, logic and working code.",
-                system="You are ARC's specialist. Answer accurately and completely.", n=900),
+                system=ARC_SYSTEM_PROMPT + "\nYou are ARC's specialist. Answer accurately and completely.", n=900),
             safe(m_critic,
                 f"Plan:\n{plan}\n\nTask: {msg}\nWrite an alternative take on the answer. Be creative, direct, unconstrained by convention. Different angle from the obvious approach.",
                 system="You are ARC's creative mind. Give a genuinely different, useful perspective.", n=500),
@@ -142,29 +169,29 @@ async def _council_answer(msg: str, history: list, emit) -> str:
         final = await safe(m_spec,
             f"Draft A:\n{draft_acc}\n\nDraft B:\n{draft_creative}\n\nCross-check notes:\n{critique}\n\n"
             "Merge the best of both drafts, apply the corrections, and produce the final polished answer for the user.",
-            system="You are ARC. Final answer only, no meta commentary.", n=900)
+            system=ARC_SYSTEM_PROMPT + "\nFinal answer only, no meta commentary.", n=900)
         return final
 
     # single-model fallback: sequential council with whatever model exists
     emit(act("pondering", "Convening the council — planning the approach"))
     plan = await safe(m_reason,
         f"Task: {msg}\nBreak this into 2-4 concrete steps. Be terse, one line per step.",
-        system="You are ARC's planner. Output a numbered plan only.", n=200)
+        system=ARC_SYSTEM_PROMPT + "\nYou are ARC's planner. Output a numbered plan only.", n=200)
 
     emit(act("forging", "Specialist drafting a solution"))
     draft = await safe(m_spec,
         f"Plan:\n{plan}\n\nTask: {msg}\nWrite the best direct answer.",
-        system="You are ARC's specialist. Answer accurately and completely.", n=900)
+        system=ARC_SYSTEM_PROMPT + "\nYou are ARC's specialist. Answer accurately and completely.", n=900)
 
     emit(act("pondering", "Critic reviewing for errors and gaps"))
     critique = await safe(m_critic,
         f"Draft answer:\n{draft}\n\nList up to 3 concrete corrections or improvements. If solid, say 'SOLID'.",
-        system="You are ARC's critic. Be blunt and brief.", n=200)
+        system=ARC_SYSTEM_PROMPT + "\nYou are ARC's critic. Be blunt and brief.", n=200)
 
     emit(act("weaving", "Weaving the reviewed answer"))
     final = await safe(m_spec,
         f"Draft:\n{draft}\n\nCritic notes:\n{critique}\n\nProduce the final polished answer for the user.",
-        system="You are ARC. Final answer only, no meta commentary.", n=900)
+        system=ARC_SYSTEM_PROMPT + "\nFinal answer only, no meta commentary.", n=900)
     return final
 
 
@@ -277,7 +304,7 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
                 # council ran inside; collect final via generator return
             else:
                 yield json.dumps(act("pondering", "Pondering your message")) + "\n"
-                system = "You are ARC, a capable, concise AI assistant." + (f"\nRelevant context from memory:\n{ctx}" if ctx else "")
+                system = ARC_SYSTEM_PROMPT + (f"\nRelevant context from memory:\n{ctx}" if ctx else "")
                 stream = ollama.generate_stream(council["primary"], _with_history(msg, history), system=system)
                 answer = ""
                 async for line in stream:
@@ -315,6 +342,7 @@ async def chat_stream(msg: str, history: Optional[list] = None) -> AsyncGenerato
             yield json.dumps({"event": "token", "text": answer}) + "\n"
 
         # WORKFLOW MEMORY
+        yield json.dumps(act("done", "Done")) + "\n"
         mem_id = append_workflow_memory(msg, kind, answer[:400])
         yield json.dumps({"event": "done", "activity_kind": kind, "memory_id": mem_id,
                           "source": "ollama",

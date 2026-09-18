@@ -24,8 +24,13 @@ async def _start():
 
 
 async def _check_auth(authorization: Optional[str]):
-    if not S.ARC_API_KEY:
+    """Zero-friction by default: ARC runs open (personal deployment) so the
+    browser UI, the Colab worker and curl all work with NO key setup.
+    Set ARC_REQUIRE_KEY=1 (env) to lock the deployment to the Bearer key."""
+    if os.environ.get("ARC_REQUIRE_KEY", "").lower() not in ("1", "true", "yes"):
         return
+    if not S.ARC_API_KEY:
+        return  # no key configured -> nothing to enforce against
     if not authorization or authorization != f"Bearer {S.ARC_API_KEY}":
         raise HTTPException(401, "invalid or missing API key")
 

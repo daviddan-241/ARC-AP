@@ -68,3 +68,22 @@ worker (round-trip verified in production, 2026-09-17).
 - No fake inference, no fabricated balances, trades, or deployments.
 - Private keys and API keys never leave the server.
 - Background tasks run while the service is awake and report real step results.
+
+## Design (v3 — Gemini/Grok-style light mobile app)
+
+The UI is a full light-theme mobile app matching the reference screenshots:
+
+- **Home** — rainbow gradient sparkle, "The mic is yours, Danny." greeting
+- **Composer** — floating "+ Ask ARC anything" pill with + quick-actions (Browser / Research / Terminal / Image / Trading), a real voice mic (Web Speech API), and suggestion chips that appear above the bar on focus
+- **Thoughts** — expandable activity trace with green checkmarks (Pondering → Scouting → Computing → Forging → Studying → Weaving → Waking → Done), spinner while running
+- **Drawer** — account capsule, New chat, Search chats (with dates), recents, and Apps / Plugins / Skills / Settings
+- **Account sheet** — avatar, Hi Danny, Manage account, Switch account, full account row list
+- **Plugins** — installed icon row (real READY capabilities), Featured list (Gmail, GitHub, Drive, Calendar, Notion, Slack — locked ones say "coming soon" honestly), Developer Tools, Business & Operations
+- **Apps** — From Google / Other tabs, Workspace cards with Learn more + enable toggles (toggles persist locally)
+- **Skills** — My Skills empty state + Create with ARC, built-in document/PDF/presentation/spreadsheet skills that prefill the composer and run with real tools
+- **Model pill** — Fast/Waking state, active council roster
+
+### Zero key friction
+ARC runs **open by default** (personal deployment): browser, Colab worker and curl all work
+with no key. The Colab notebook key line is optional. To lock the deployment down set
+`ARC_REQUIRE_KEY=1` — then requests must carry `Authorization: Bearer <ARC_API_KEY>`.
